@@ -148,7 +148,12 @@ o = MPWObject()
 o.putfirst()
 
 for i in range(65536):
-    b = struct.pack('>H16b', i, *range(1,17))
+    b = struct.pack('>H16b', i, *range(16))
+
+    o.putmod(name='#xxxx')
+    o.putcontents(b)
+
+    b = struct.pack('>H16b', i, *range(1, 17))
 
     o.putmod(name='#xxxx')
     o.putcontents(b)
