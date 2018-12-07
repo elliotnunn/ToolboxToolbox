@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+from sys import argv, stderr
+
+st = '\t'
+tl = 4
+ll = 80-tl
+pl = ll-8
+
+with open(argv[1], 'rb') as f:
+    bin = f.read()
+
+start = 0
+
+print("\tSTRING   AsIs", end='\r')
+print("\t", end='\r')
+
+nl = True
+
+while start < len(bin):
+    end = bin.find(b'\0', start)
+    if end == -1:
+        end = len(bin)
+    else:
+        end += 1
+    
+    raw = [bin[start:end]]
+
+    while True:
+        itm = raw[-1]
+        if len(itm) == 1: break
+        idx = None
+        for test in [b'\0', b'\x0d']:
+            found = itm.find(test)
+            if found != -1:
+                if idx is not None:
+                    idx = min(idx, found)
+                else:
+                    idx = found
+        
+        if idx is None: break
+        
+        ins = [itm[:idx], itm[idx:idx+1], itm[idx+1:]]
+        if not ins[-1]: ins = ins[:-1]
+        if not ins[0]: ins = ins[1:]
+        raw[-1:] = ins
+    
+    raw = ', '.join("0" if s==b'\0' else '0x0d' if s==b'\x0d' else "'%s'" % s.decode('ascii').replace("'", "''").replace('\\', '\\\\') for s in raw)
+
+    srep = "DC.B " + raw
+    cmt = '; 0x%04x' % (start + int(argv[2]))
+
+    if len(srep) + len(cmt) > ll:
+        if not nl:
+            print(st, end='\r')
+        
+        print(st + srep, end='\r')
+        print(st + st * ((pl+3)//tl) + cmt, end='\r')
+
+        print(st, end='\r')
+        nl = True
+    else:
+        print(st + srep + st * ((pl-len(srep)+3)//tl) + cmt, end='\r')
+        nl = False
+
+    start = end

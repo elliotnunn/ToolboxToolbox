@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import sys
+import struct
+
+f = open(sys.argv[1], 'rb')
+rom = f.read()
+f.close()
+
+top, = struct.unpack('>L', rom[0x40:0x44])
+
+declrom = rom[rom.rindex('kckckckc', 0, top) + 8 : top]
+
+f = open(sys.argv[2], 'wb')
+f.write(declrom)
+f.close

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [[ $# -ne 2 ]]; then
+	echo "Usage: $0 RomMondo RomImageL"
+	exit 1
+fi
+
+dd if="$1" of="$2" count=1 bs=$((0x`xxd -p -s $((0x1a)) -l 4 "$1"`)) &> /dev/null
+dd if=/dev/zero of="$2" bs=1 seek=$((0x0)) count=$((0x4)) conv=notrunc &> /dev/null
+dd if=/dev/zero of="$2" bs=1 seek=$((0x1a)) count=$((0x4)) conv=notrunc &> /dev/null
+dd if=/dev/zero of="$2" bs=1 seek=$((0x30)) count=$((0x10)) conv=notrunc &> /dev/null
+dd if=/dev/zero of="$2" bs=1 seek=$((0x40)) count=$((0x4)) conv=notrunc &> /dev/null

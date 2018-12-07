@@ -1,0 +1,570 @@
+#!/usr/bin/python
+# coding=macroman
+
+import struct
+from sys import argv
+import os
+from os import path
+
+
+
+plainchars = '.........Æ...Â.................. !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~.€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîï' + chr(0xf0) + 'ñòóôõö÷øùúûüýþÿ'
+print len(plainchars)
+
+
+
+if len(argv) == 3:
+    rezdest = argv[2]
+elif len(argv) == 2:
+    rezdest = None
+else:
+    print 'Usage: %s ROM PREBUILT_DIR' % argv[0]
+    exit
+
+f = open(argv[1], 'rb')
+rom_bin = f.read()
+f.close()
+
+
+rrsrcs = [] # populated by dump_rrsc()
+makerules = []
+allconds = []
+
+align_offset = lambda offset, align: (offset + align - 1) & ~(align - 1)
+pad_offset = lambda offset, align: (offset + align - 1) & ~(align - 1)
+
+COMBO_FIELDS = {
+    0x40: 'AppleTalk1',
+    0x20: 'AppleTalk2',
+    0x30: 'AppleTalk2_NetBoot_FPU',
+    0x08: 'AppleTalk2_NetBoot_NoFPU',
+    0x10: 'NetBoot',
+    0x78: 'AllCombos',
+}
+
+
+def rezname(rsrcname):
+    rezfile = rsrcname.split(':')[-1]
+    if rezfile.lower().endswith('.rsrc'): rezfile = rezfile[:-5]
+    rezfile = rezfile + '.r'
+    return rezfile
+
+def dump_rrsc(r, rrsc=999, name='', file=(), cond='kUniversal'):
+    if not r: return ''
+    
+    if not cond in allconds: allconds.append(cond)
+    
+    tab = '\t'
+    ls = []
+    
+    ls.append('resource \'rrsc\' (%d, "%s") {' % (rrsc, name))
+    ls.append(tab + cond + ',')
+    ls.append(tab + r[0].combo_field + ',')
+    for el in file:
+        if not el.startswith('{'): el = '"' + el + '"'
+        ls.append(tab + el + ',')
+    ls.append('')
+    ls.append(tab + '{')
+    
+    typelist = []
+    
+    for res in r:
+        if not typelist or typelist[-1][0] != res.type:
+            typelist.append((res.type, []))
+        
+        typelist[-1][1].append(res)
+    
+    for t, reses in typelist:
+        ls.append(tab + tab + "'" + t + "',")
+        nums = ", ".join([str(res.id) + ('',' /*'+res.name+'*/')[bool(res.name)] for res in reses])
+        ls.append(tab + tab + "{ " + nums + " };")
+    
+    ls.append(tab + '}')
+    ls.append('};')
+    
+    rrsrcs.append('\n'.join(ls))
+    
+    if rezdest != None:
+        # now pick a rez file to dump this sucker to
+        rezfile = rezdest + '/' + rezname(file[-1])
+        
+        # and I guess I'll need to make it...
+        if not file in makerules: makerules.append(file)
+        
+        f = open(rezfile, 'a')
+        for res in r:
+            f.write(str(res))
+        f.close()
+
+
+class Rsrc:    
+    def __init__(self, rom_bin, my_offset):
+        #print 'ref at 0x%08x' % my_offset
+        rsrc_s_fmt = '> B 7x L L 4s h c 256p' # Struct actually padded to 16b to fit pstring
+        rsrc_s_len = struct.calcsize(rsrc_s_fmt)
+        rsrc_s = rom_bin[my_offset : my_offset + rsrc_s_len]
+        rsrc_s_tuple = struct.unpack(rsrc_s_fmt, rsrc_s)
+        
+        (self.combo_field,
+        self.next_offset, data_offset,
+        self.type, self.id,
+        attrs, self.name)        = rsrc_s_tuple
+        
+        self.combo_field = COMBO_FIELDS[self.combo_field]
+        
+        rsrc_s_len_actual = pad_offset(rsrc_s_len - 256 + len(self.name), 16)
+        
+        #print 'res at 0x%08x' % data_offset
+        mm_header_fmt = '> L L L'
+        mm_header_len = struct.calcsize(mm_header_fmt)
+        mm_header = rom_bin[data_offset - mm_header_len : data_offset]
+        mm_header_tuple = struct.unpack(mm_header_fmt, mm_header)
+        
+        (mm_attrs, block_len, mm_bogus_ptr_ptr) = mm_header_tuple
+        #print '0x%08x 0x%08x %s %s %s' % (block_len, mm_bogus_ptr_ptr, self.type, str(self.id).rjust(6), self.name)
+        
+        #print ('0x%08x' % mm_attrs)
+        #if mm_attrs != 0xc0a00000: print "Wrong Memory Manager attributes"
+        
+        self.data = rom_bin[data_offset : data_offset + block_len - mm_header_len]
+    
+    def __str__(self):
+    
+        if self.name:
+            firstline = 'data \'%s\' (%d, "%s") {' % (self.type, self.id, self.name)
+        else:
+            firstline = 'data \'%s\' (%d) {' % (self.type, self.id)
+        
+        a = [firstline]
+        
+        # This is now horribly horribly slow, but it round-trips with Rez/DeRez *perfectly*
+        for l in range(0, len(self.data), 16):
+            dat = self.data[l:l+16]
+            
+            hex = ' '.join([dat[m:m+2].encode('hex') for m in range(0, len(dat), 2)]).upper()
+            cmt = ''.join([plainchars[ord(x)] for x in dat]).replace('*/','*.')
+            ln = ('\t$"%s"' % hex).ljust(55)
+            ln = '%s/* %s */' % (ln, cmt)
+            a.append(ln)
+        
+        a.append('};')
+        a.append('')
+        a.append('')
+        return '\r'.join(a)
+
+
+(map_offset,) = struct.unpack('>L', rom_bin[0x1A : 0x1A + 4])
+
+map_s_fmt = '>Lbbhh'
+map_s_len = struct.calcsize(map_s_fmt)
+map_s = rom_bin[map_offset:map_offset + map_s_len]
+(offsetToFirst, maxValidIndex, comboFieldSize, comboVersion, headerSize) = struct.unpack(map_s_fmt, map_s)
+
+print 'maxValidIndex = %d, comboFieldSize = %d, comboVersion = %d, headerSize = %d' % (maxValidIndex, comboFieldSize, comboVersion, headerSize)
+
+res = []
+
+next_offset = offsetToFirst
+while next_offset != 0:
+    r = Rsrc(rom_bin, next_offset)
+    res.append(r)
+    fname = '/tmp/%s.%d' % (r.type, r.id)
+    r.tmpname = fname
+    #print 'Tools/DataForkToRez "%s" "%s" "%s" "%d" "%s";' % (fname, 'RomDump.r', r.type, r.id, r.name)
+    f = open(fname, 'wb')
+    f.write(r.data)
+    f.close()
+    
+    next_offset = r.next_offset
+
+res.reverse()
+
+#for r in res:
+#    print '%s %s %sb %s' % (r.type, str(r.id).ljust(6), str(len(r.data)).rjust(6), r.name)
+
+
+# now try to dump these intelligently
+
+
+
+
+# These will probably need more work before they're good for an OldWorld ROM
+
+# Boot beep resources....
+
+cur = []
+while res and (res[0].type, res[0].id) in [('beep',0)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=105, name='TNT Boot beep (delete me!)', file=('{MiscDir}','BootBeep.rsrc'), cond='hasGrandCentral')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('beep',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=110, name='TNT error beep (delete me!)', file=('{MiscDir}','ErrorBeep.rsrc'), cond='hasGrandCentral')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('beep',2)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=110, name='Spartacus boot beep (delete me!)', file=('{MiscDir}','BootBeep.rsrc'), cond='hasGrandCentral')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('snd ',-32256)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=106, name='STP Boot beep (delete me!)', file=('{MiscDir}','BootBeep.rsrc'), cond='STP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('snd ',-32255)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=111, name='STP error beep (delete me!)', file=('{MiscDir}','ErrorBeep.rsrc'), cond='STP')
+
+# end of fixed-position resources
+
+
+
+cur = []
+while res and res[0].type in 'boot rovm rov#': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=10, name='Gibbly Guts', file=('{RsrcDir}','Gibbly.rsrc'))
+
+cur = []
+while res and res[0].type in 'boot rovm': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=12, name='Gibbly Rsrc', file=('{RsrcDir}','Gibbly.rsrc'), cond='hasROMGibbly')
+
+cur = []
+while res and res[0].type in 'CURS FONT FOND snd ': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=20, name='ROMFonts', file=('{RsrcDir}','ROMFonts.rsrc'))
+
+cur = []
+while res and res[0].type in 'KCHR vadb KMAP KCAP': cur.append(res.pop(0))
+dump_rrsc([r for r in cur if not 6 <= r.id <= 7], rrsc=30, name='kbd', file=('{RsrcDir}','kbd.rsrc'))
+dump_rrsc([r for r in cur if 6 <= r.id <= 7], rrsc=35, name='Portable kbd', file=('{RsrcDir}','kbd.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('CDEF',0),('CDEF',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=40, name='ControlMgr', file=('{RsrcDir}','ControlMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('MBDF',0),('MDEF',0)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=50, name='MenuMgr', file=('{RsrcDir}','MenuMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and res[0].type in 'accl pslt(??) icl4 icl8 ICN# ics# ics4 ics8 cicn clut ppat pixs': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=60, name='MiscROMRsrcs', file=('{RsrcDir}','MiscROMRsrcs.rsrc'))
+
+cur = []
+while res and res[0].type in 'PICT': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=61, name='MiscROMRsrcs', file=('{RsrcDir}','MiscROMRsrcs.rsrc'), cond='hasSCSIDiskModeFeature')
+
+cur = []
+while res and 'EDisk' in res[0].name: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=70, name='EDisk', file=('{RsrcDir}','EDisk.rsrc'), cond="hasEDisk")
+
+cur = []
+while res and res[0].type in 'DRVR nlib Libr CD33 CD34': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=75, name='BlueBox', file=('{RsrcDir}','BlueBox.rsrc'), cond="Classic")
+
+cur = []
+while res and res[0].type in 'clut gama mitq': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=80, name='CQD', file=('{RsrcDir}','CQD.rsrc'))
+
+cur = []
+while res and res[0].type in 'WDEF wctb cctb': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=90, name='WindowMgr', file=('{RsrcDir}','WindowMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',0),('LDEF',0),('LDEF',19)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=100, name='ListMgr', file=('{RsrcDir}','ListMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',3)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=110, name='StandardFile', file=('{RsrcDir}','StandardFile.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and res[0].type == 'DRVR': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=550, name='BlueBox2', file=('{RsrcDir}','BlueBox.rsrc'), cond="Classic")
+
+cur = []
+while res and res[0].type == 'PACK' and 4 <= res[0].id <= 5 and res[0].combo_field == 'AppleTalk2_NetBoot_FPU': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=120, name='InSane', file=('{RsrcDir}','InSane.rsrc'), cond='has040MMU')
+
+cur = []
+while res and res[0].type == 'PACK' and 4 <= res[0].id <= 5: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=130, name='Sane1', file=('{RsrcDir}','InSaneNFPU.rsrc'))
+
+cur = []
+while res and res[0].type == 'PACK' and res[0].id == 7: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=140, name='Sane2', file=('{RsrcDir}','Sane.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',8)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=150, name='AppleEventMgr', file=('{RsrcDir}','AppleEventMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',9),('ppcc',-5856)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=160, name='PPC', file=('{RsrcDir}','PPC.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',11)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=170, name='EditionMgr', file=('{RsrcDir}','EditionMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('wedg',-5760),('wedg',-5759),('PACK',12)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=180, name='ColorPicker', file=('{RsrcDir}','ColorPicker.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and res[0].type in 'cmtb proc snd LDEF': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=190, name='CommToolBox', file=('{RsrcDir}','CommToolbox.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',13),('proc',-5728),('proc',-5727)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=200, name='DataAccessMgr', file=('{RsrcDir}','DataAccessMgr.rsrc'), cond='hasDataAccessPACK')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dimg',-16385)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=500, name='DictionaryMgr', file=('{RsrcDir}','DictionaryMgr.rsrc'), cond='!NewWorld')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',14),('WDEF',126)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=210, name='HelpMgr', file=('{RsrcDir}','HelpMgr.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('PACK',15)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=220, name='PictUtilities', file=('{RsrcDir}','PictUtilities.rsrc'), cond='hasSysSevenResources')
+
+cur = []
+while res and 'Sony' in res[0].name: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=230, name='Sony', file=('{RsrcDir}','Sony.rsrc'), cond='!NewWorld')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('iopc',0)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=240, name='SCCIOP', file=('{RsrcDir}','SCCIOP.rsrc'), cond='hasIopScc')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('SERD',0)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=250, name='Serial', file=('{RsrcDir}','Serial.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('SERD',60),('SERD',61)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=260, name='SerialIOP', file=('{RsrcDir}','Serial.rsrc'), cond='hasIopScc')
+
+# PDM has SERD, TNT and later have nsrd
+cur = []
+while res and (res[0].type, res[0].id) in [('SERD',1),('nsrd',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=270, name='SerialDMA', file=('{RsrcDir}','SerialDMA.rsrc'), cond="hasPSC || hasAMIC")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('shal',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=281, name='SerialHALPSC', file=('{RsrcDir}','SerialDMA.rsrc'), cond="hasPSC")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('shal',2)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=282, name='SerialHALAMIC', file=('{RsrcDir}','SerialDMA.rsrc'), cond="hasAMIC")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('iopc',2)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=290, name='SWIMIOP', file=('{RsrcDir}','SWIMIOP.RSRC'), cond="hasIopSwim")
+
+cur = []
+while res and (res[0].type in 'lmgr drvr atlk ltlk iopc' or (res[0].type == 'DRVR' and res[0].id in (9, 10, 40, 125, 126, 127))): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=300, name='AppleTalk', file=('{RsrcDir}','AppleTalk.ROM.RSRC'), cond="hasAppleTalkInROM")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',60)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=320, name='ATBoot', file=('{RsrcDir}','ATBoot.RSRC'), cond="hasNetBoot")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',49)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=330, name='NetBoot', file=('{RsrcDir}','NetBoot.RSRC'), cond="hasNetBoot")
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dfrg',-20722),('icns',-20722),('STR ',-20722)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=335, name='LANDisk', file=('{RsrcDir}','LANDisk.rsrc'), cond='NewWorld')
+
+# Possibly this should go a bit lower?
+cur = []
+while res and (res[0].type, res[0].id) in [('attx',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=340, name='AppleIIFonts', file=('{RsrcDir}','ROMApple2Fonts.RSRC'), cond="hasApple2Fonts")
+
+cur = []
+while res and res[0].id == -16515: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=435, name='Native BCScreen', file=('{RsrcDir}','BCScreen.rsrc'), cond='NewWorld')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',4)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=350, name='NewAge', file=('{RsrcDir}','NewAge.RSRC'), cond='hasNewAge')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('rtmr',0)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=360, name='RealTimeMgr', file=('{RsrcDir}','RTMgr.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',51),('3210',0),('3210',1),('3210',2),('3210',3),('3210',4)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=361, name='RTDrvr', file=('{RsrcDir}','RTDrvr.rsrc'), cond='hasDSP')
+
+
+# be suspicious of these...
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dspf',128)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=370, name='StdSndInput', file=('{RsrcDir}','StdSndInput.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dspf',128)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=380, name='StdSndMidput', file=('{RsrcDir}','StdSndMidput.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dspf',128)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=390, name='StdSndOutput', file=('{RsrcDir}','StdSndOutput.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dspf',128)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=401, name='StdSndPlayer', file=('{RsrcDir}','StdSndPlayer.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('rtmr',1)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=410, name='RTSnd', file=('{RsrcDir}','RTSnd.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('dspf',128)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=420, name='ZoundBlueInputAdaptor', file=('{RsrcDir}','ZoundBlueInputAdaptor.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',-16565)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=430, name='RTSndIn', file=('{RsrcDir}','RTSndIn.rsrc'), cond='hasDSP')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('thng',-16727)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=440, name='VDigT', file=('{RsrcDir}','VDigT.rsrc'), cond='hasVideoIn')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('code',-16729)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=445, name='VDigC', file=('{RsrcDir}','VDigC.rsrc'), cond='hasVideoIn')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('thng',-16728)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=450, name='I2CT', file=('{RsrcDir}','I2CT.rsrc'), cond='hasVideoIn')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('code',-16730)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=455, name='I2CC', file=('{RsrcDir}','I2CC.rsrc'), cond='hasVideoIn')
+
+cur = []
+xx = [('DRVR',127)]
+xx += [('enet',id) for id in [8, 46, 78, 79]]
+xx += [('ecfg',id) for id in [19, 20, 22, 26, 27, 30, 35, 36, 41, 42, 52, 86, 89, 90, 93, 94, 95,104,116,117,118,119,120,121,122,123]]
+xx += [('ecf2',id) for id in [-4,-3,-2,-1]]
+while res and (res[0].type, res[0].id) in xx: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=460, name='Ethernet', file=('{RsrcDir}','Ethernet.RSRC'), cond='!NewWorld')
+
+cur = []
+while res and (res[0].type == 'ecfg' and res[0].id in (43, 60, 78, 79)): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=461, name='Ethernet2', file=('{RsrcDir}','MACEecfg.rsrc'), cond='hasMace')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ptch',42)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=470, name='VM', file=('{RsrcDir}','VM.RSRC'), cond='hasVMinROM')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',-16511),('ndrv',-16511)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=480, name='Backlight', file=('{RsrcDir}','Backlight.RSRC'), cond='hasLCDScreen')
+
+cur = []
+while res and res[0].type in 'CDEF DRVR proc sift nift nsnd adio thng ICON slib nlib STR ': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=490, name='Sound', file=('{RsrcDir}','SoundMgr.rsrc'), cond='!NewWorld')
+
+cur = []
+while res and res[0].type == 'GARY': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=501, name='EmulatorAccelerations', file=('{MiscDir}','EmulatorAccelerations.rsrc'), cond='hasMixedMode')
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ncod',2),('nlib',3)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=599, name='Multiprocessing', file=('{RsrcDir}','Multiprocessing.rsrc'), cond='hasMixedMode && NewWorld')
+
+cur = []
+while res and res[0].type in 'ncod nlib ntrb cfrf': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=502, name='GoNative', file=('{MiscDir}','GoNativeResources'), cond='hasMixedMode')
+
+cur = []
+while res and 'BCScreen' in res[0].name: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=435, name='BCScreen', file=('{RsrcDir}','BCScreen.rsrc'), cond='TNTPlus')
+
+# scod resources are CODEs that don't confuse the Process manager
+cur = []
+while res and res[0].type == 'scod': cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=600, name='Mystery scods', file=('{RsrcDir}','MysteryCode.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('DRVR',53),('DRVR',-20175)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=605, name='ATA DRVRs', file=('{RsrcDir}','ATA.rsrc'))
+
+cur = []
+while res and (res[0].type == 'ndrv' and 99 <= res[0].id < 110): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=606, name='Display and sound drivers', file=('{RsrcDir}','MachineSpecificVideoSound.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ncod',50)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=607, name='NativeNub -- for MacsBug?', file=('{RsrcDir}','MysteryCode.rsrc'))
+
+cur = []
+while res and (res[0].type.startswith('lib') or res[0].type.startswith('sl0')): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=608, name='Weird OpenTxpt stuff', file=('{RsrcDir}','OpenTxptRom.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('nitt',43),('gcko',43)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=610, name='Native -- unsure?', file=('{RsrcDir}','MysteryCode.rsrc'))
+
+cur = []
+while res and res[0].id == -16600: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=615, name='Audio???', file=('{RsrcDir}','MysteryAudio.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ndrv',-20166),('ndrv',-20181)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=620, name='PCCard/CardBus', file=('{RsrcDir}','PCCard.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ndrv',-20164),('code',-20164)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=630, name='MediaBay', file=('{RsrcDir}','MediaBay.rsrc'))
+
+cur = []
+while res and sum([c in res[0].name.lower() for c in ('ata','ide')]): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=640, name='Real ATA Drivers', file=('{RsrcDir}','ATA.rsrc'))
+
+cur = []
+while res and (res[0].type, res[0].id) in [('ndrv',-20190),('ndrv',-20196)]: cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=645, name='Legacy', file=('{RsrcDir}','LegacyDrivers.rsrc'))
+
+cur = []
+while res and ('usb' in res[0].type or res[0].id == -20776 or 'USB' in res[0].name): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=650, name='USB', file=('{RsrcDir}','USB.rsrc'))
+
+cur = []
+while res and (res[0].id in [-21143,-21142,-21141,-21140,1207,-20994]): cur.append(res.pop(0))
+dump_rrsc(cur, rrsc=660, name='FireWire', file=('{RsrcDir}','FireWire.rsrc'))
+
+dump_rrsc(res, rrsc=999, name='EverythingElse', file=('{RsrcDir}','EverythingElse'))
+
+
+# Our attempt at a RomResources.r
+print '### Try to merge this into RomResources.r ###'
+print '\n\n'.join(rrsrcs)
+
+print '\n\n\n'
+
+print '### Here is a list of all the link-time conditionals used above. ###'
+print '\n'.join(['\t\t\t\t\t' + ltc.ljust(40) + u'¶' for ltc in allconds]).encode('macroman')
+
+print '\n\n\n'
+
+print '### Here is a list of all the rsrc files used above. ###'
+print '\n'.join(['\t\t\t\t\t' + ('"' + ''.join(mr) + '"').ljust(40) + u'¶' for mr in makerules]).encode('macroman')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

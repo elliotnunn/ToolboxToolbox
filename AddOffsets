@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+from sys import argv
+
+offset = int(argv[1][2:], 16)
+
+f = open(argv[2])
+
+for l in f:
+    print('%s\t\t\t\t\t\t\t\t\t\t\t\t; 0x%06x' % (l.rstrip(), offset))
+    offset += 4

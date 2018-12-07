@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [[ $# -lt 4 || $# -gt 5 ]]; then
+	echo "Usage: $0 IN OUT TYPE ID"
+	exit 1
+fi
+
+echo "data '$3' ($4, \"$5\") {" >> "$2"
+xxd -p "$1" | sed s/^/\$\"/ | sed s/$/\"/ >> "$2"
+echo "};" >> "$2"
