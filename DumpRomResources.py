@@ -77,6 +77,7 @@ if __name__ == '__main__':
             fname += ' "%s"' % r.name.decode('ascii')
         if r.combo_field != 'AllCombos':
             fname += ' (%s)' % r.combo_field
+        fname = fname.replace('/', '-')
 
         with open(os.path.join(dest, fname), 'wb') as f:
             f.write(r.data)

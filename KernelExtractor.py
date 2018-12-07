@@ -20,7 +20,7 @@ for fname in argv[2:]:
 		print('--- no kernel')
 		continue
 	vers = '%02x%02x' % tuple(b[4:6])
-	if not vers.startswith('02'): continue
+	# if not vers.startswith('02'): continue
 	print('---', vers)
 	if vers in kerns:
 		if kerns[vers] != b:

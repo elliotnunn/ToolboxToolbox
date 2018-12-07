@@ -6,7 +6,7 @@ import struct
 CR = '\r'
 
 ROMSIZE = 0x400000
-EMBASE = 0x360000
+EMBASE = 0x320000
 
 try:
     rom_path, = argv[1:]
@@ -23,7 +23,7 @@ except:
     exit(1)
 
 # read special offsets into emulator, from ConfigInfo struct
-em_entry, em_kernel_trap_table = struct.unpack_from('>LL', rom, 0x30d080)
+em_entry, em_kernel_trap_table = struct.unpack_from('>LL', rom, 0x30c080)
 
 labels = {
     EMBASE: ['EmTop'],
