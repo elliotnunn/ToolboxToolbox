@@ -49,6 +49,9 @@ incfiles.append(path.basename(args.source))
 
 for i in range(len(incfiles)):
     orig = incfiles[i]
+    if orig == 'StandardEqu.d':
+        incfiles[i] = '{ObjDir}' + orig
+        continue
     doneflag = False
     for k, v in args.defines:
         if path.exists(path.join(v, orig)):
