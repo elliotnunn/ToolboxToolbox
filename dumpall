@@ -1,0 +1,8 @@
+#!/bin/bash
+
+find "$1" -iname '*.o' -type f | while read -r x; do
+	if [ ! -e "$x.dmp" ] || [ "$x" -nt "$x.dmp" ]; then
+		echo "$x"
+		~/MacSrc/dump "$x" > "$x.dmp"
+	fi
+done

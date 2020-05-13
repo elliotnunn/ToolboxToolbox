@@ -1,0 +1,3 @@
+#!/bin/sh
+
+for x in "$@"; do SetFile -t 'OBJ ' -c 'MPS ' "$x"; mpw DumpObj "$x"; done

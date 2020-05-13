@@ -33,7 +33,7 @@
 # Byte = 0;
 
 import argparse
-from macresources.do_what_i_mean import read
+import macresources
 import os
 from os import path
 import struct
@@ -62,7 +62,7 @@ for base, dirs, files in os.walk(args.src):
     files[:] = [f for f in files if f.endswith('.rdump')]
 
     for f in files:
-        resources = read(path.join(base, f))
+        resources = list(macresources.parse_rez_code(open(path.join(base, f), 'rb').read()))
 
         for r in resources:
             if r.type == b'ckid':

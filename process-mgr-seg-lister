@@ -1,0 +1,781 @@
+lines = """
+
+ seg INIT 1
+MYGESTALT		INIT	$1,$0	 	 
+main		INIT	$1,$16	@22	 
+InitializeEnvironment		INIT	$1,$176	@2A	 
+InitializeScheduler		INIT	$1,$22C	 	 
+InitConfig		INIT	$1,$438	 	 
+InitExceptions		INIT	$1,$510	 	 
+VNInit		INIT	$1,$580	 	 
+InitHeapRoutines		INIT	$1,$58E	 	 
+InitHeaps		INIT	$1,$5C4	 	 
+InitAppleMenuList		INIT	$1,$692	 	 
+InitSystemMenus		INIT	$1,$6A0	 	 
+InstallPatches		INIT	$1,$748	 	 
+PuppetStringsInit		INIT	$1,$7DA	 	 
+LaunchFacelessTasks		INIT	$1,$7FA	 	 
+GetSwitchTab		INIT	$1,$90A	 	 
+ size INIT $962
+
+ seg %GlobalData 0
+connectionQ		%GlobalData	$0,$0	 	 C
+ppcWriteBQ		%GlobalData	$0,$1A	 	 C
+ppcReadBQ		%GlobalData	$0,$34	 	 C
+ppcInformBQ		%GlobalData	$0,$4E	 	 C
+eppcBQ		%GlobalData	$0,$68	 	 C
+MacOSPortTypepStr		%GlobalData	$0,$82	 	 
+MacOSPortNamepStr		%GlobalData	$0,$86	 	 
+SSSPromptpStr		%GlobalData	$0,$8A	 	 
+lastmouse		%GlobalData	$0,$8E	 	 
+mousebox		%GlobalData	$0,$92	 	 
+VolumeNotificationList		%GlobalData	$0,$96	 	 
+newProcessMgrZone		%GlobalData	$0,$9A	 	 
+oldProcessMgrZone		%GlobalData	$0,$9E	 	 
+oldSysGZProc		%GlobalData	$0,$A2	 	 #
+hAppleItemShare		%GlobalData	$0,$A6	 	 
+globalPrTypeString		%GlobalData	$0,$AA	 	 
+blockTrapAddr		%GlobalData	$0,$CA	 	 
+myRoverPtr		%GlobalData	$0,$CE	 	 #C
+inLauncheesWorld		%GlobalData	$0,$D2	 	 C
+timeoutButtonDown		%GlobalData	$0,$D4	 	 
+timeoutMaskYield		%GlobalData	$0,$D6	 	 
+forcedPupStrMenuSelection		%GlobalData	$0,$D8	 	 
+buttonUpPt		%GlobalData	$0,$DC	 	 
+defaultPuppetStringHdl		%GlobalData	$0,$E0	 	 
+list		%GlobalData	$0,$E4	 	 
+clickDAWindTimeout		%GlobalData	$0,$E8	 	 #
+eatMouseTimeout		%GlobalData	$0,$EA	 	 #
+resume_message		%GlobalData	$0,$EC	 	 #
+qd		%GlobalData	$0,$F0	 	 E
+randSeed		%GlobalData	$0,$13C	 	 E
+screenBits		%GlobalData	$0,$140	 	 E
+arrow		%GlobalData	$0,$14E	 	 E
+dkGray		%GlobalData	$0,$192	 	 E
+ltGray		%GlobalData	$0,$19A	 	 E
+gray		%GlobalData	$0,$1A2	 	 E
+black		%GlobalData	$0,$1AA	 	 E
+white		%GlobalData	$0,$1B2	 	 E
+thePort		%GlobalData	$0,$1BA	 	 E
+QUICKDRAW		%GlobalData	$0,$1BE	 	 E
+OSDispatchTable		%GlobalData	$0,$1BE	 	 C
+patchtraps		%GlobalData	$0,$446	 	 C
+skiaExists		%GlobalData	$0,$6DA	 	 
+routeEvent		%GlobalData	$0,$6DC	 	 
+tsmLayerOwner		%GlobalData	$0,$6DE	 	 
+dontGetFakeKey		%GlobalData	$0,$6E2	 	 
+fakeKeyHandle		%GlobalData	$0,$6E4	 	 
+fakeKeyCount		%GlobalData	$0,$6E8	 	 
+MachineHasMacPlusKbd		%GlobalData	$0,$6EA	 	 
+MachineHasFPU		%GlobalData	$0,$6EC	 	 
+Colorized		%GlobalData	$0,$6EE	 	 
+allocateGMBlkInSysHeap		%GlobalData	$0,$6F0	 	 
+pSystemQuitAllMsg		%GlobalData	$0,$6F2	 	 
+ppcInitErr		%GlobalData	$0,$6F6	 	 
+debugKeyTryCount		%GlobalData	$0,$6F8	 	 
+debugControlKeyCode		%GlobalData	$0,$6FA	 	 
+debugToAppRoutine		%GlobalData	$0,$6FC	 	 
+debugExitRoutine		%GlobalData	$0,$700	 	 
+debugEntryRoutine		%GlobalData	$0,$704	 	 
+oldExceptionVectors		%GlobalData	$0,$708	 	 
+IsOldDebugger		%GlobalData	$0,$7C0	 	 
+initCurStackBase		%GlobalData	$0,$7C2	 	 
+initFSQueueHook		%GlobalData	$0,$7C6	 	 
+initMemTop		%GlobalData	$0,$7CA	 	 
+initLocationZero		%GlobalData	$0,$7CE	 	 
+kernelbusy		%GlobalData	$0,$7D2	 	 
+kernelstackbase		%GlobalData	$0,$7D4	 	 
+kernelstack		%GlobalData	$0,$7D8	 	 
+kernelMode		%GlobalData	$0,$7DC	 	 
+SystemTempMemHList		%GlobalData	$0,$7DE	 	 
+vrGetProcessMgrHiMaxBlock		%GlobalData	$0,$7E2	 	 
+vrGetSystemHiFreeBytes		%GlobalData	$0,$7E6	 	 
+vrZoneMPBlockPtr		%GlobalData	$0,$7EA	 	 
+vrChipOffRelocFromFree		%GlobalData	$0,$7EE	 	 
+vrFreeTop		%GlobalData	$0,$7F2	 	 
+vrGetTopBlockSize		%GlobalData	$0,$7F6	 	 
+vrGetHighestLargeFreeBlock		%GlobalData	$0,$7FA	 	 
+vrGetLockPtr		%GlobalData	$0,$7FE	 	 
+vrShrinkProcessMgrZone		%GlobalData	$0,$802	 	 
+vrMoveZone		%GlobalData	$0,$806	 	 
+vrExtendZone		%GlobalData	$0,$80A	 	 
+vrGetProcessMgrLoFreeBytes		%GlobalData	$0,$80E	 	 
+In32BitMode		%GlobalData	$0,$812	 	 
+ProcessMgrZone		%GlobalData	$0,$814	 	 
+ApplicationMenuHdl		%GlobalData	$0,$818	 	 
+hGenericDAIconSuite		%GlobalData	$0,$81C	 	 
+hGenericAppIconSuite		%GlobalData	$0,$820	 	 
+FirstAppleItem		%GlobalData	$0,$824	 	 
+pStrListCopyNamePrefix		%GlobalData	$0,$828	 	 
+hHideCurrent		%GlobalData	$0,$82C	 	 
+standardMenuDefProcRsrc		%GlobalData	$0,$830	 	 
+nullTimeout		%GlobalData	$0,$834	 	 
+srcMyScrapInfo		%GlobalData	$0,$836	 	 
+napOver		%GlobalData	$0,$848	 	 
+dont_switch		%GlobalData	$0,$84A	 	 
+coercionState		%GlobalData	$0,$84C	 	 
+cutCopyCount		%GlobalData	$0,$84E	 	 
+lmemToolDataSize		%GlobalData	$0,$850	 	 
+switchTabPtr		%GlobalData	$0,$854	 	 
+nextswitch		%GlobalData	$0,$858	 	 
+lastswitch		%GlobalData	$0,$85C	 	 
+desklayerowner		%GlobalData	$0,$860	 	 
+desklayer		%GlobalData	$0,$864	 	 
+IMLayer		%GlobalData	$0,$868	 	 
+MFLayer		%GlobalData	$0,$86C	 	 
+ShellWasFinderType		%GlobalData	$0,$870	 	 
+pDyingStateList		%GlobalData	$0,$872	 	 
+pSleepingStateList		%GlobalData	$0,$876	 	 
+pDebugProcess		%GlobalData	$0,$87A	 	 
+pShellProcess		%GlobalData	$0,$87E	 	 
+pLastBGProcess		%GlobalData	$0,$882	 	 
+pFrontProcessQueue		%GlobalData	$0,$886	 	 
+pNewFrontProcess		%GlobalData	$0,$88A	 	 
+pFrontProcess		%GlobalData	$0,$88E	 	 
+pCurrentProcess		%GlobalData	$0,$892	 	 
+initialProcessSR		%GlobalData	$0,$896	 	 
+remnulls		%GlobalData	$0,$898	 	 
+nbacks		%GlobalData	$0,$89A	 	 
+ProcessIDSource		%GlobalData	$0,$89C	 	 
+ProcessNumberSource		%GlobalData	$0,$89E	 	 
+NullProcess		%GlobalData	$0,$8A2	 	 
+ size %GlobalData $A00
+
+ seg Main 2
+#0001		Main	$2,$0	 	 #
+buserr		Main	$2,$52	@32	 E
+addrerr		Main	$2,$54	@3A	 E
+ilglerr		Main	$2,$56	@42	 E
+zeroerr		Main	$2,$58	@4A	 E
+chkerr		Main	$2,$5A	@52	 E
+trapverr		Main	$2,$5C	@5A	 E
+priverr		Main	$2,$5E	@62	 E
+traceerr		Main	$2,$60	@6A	 E
+line1111err		Main	$2,$64	@72	 E
+unass		Main	$2,$66	@7A	 E
+spurint		Main	$2,$66	@82	 E
+uniniterr		Main	$2,$66	@8A	 E
+fmterr		Main	$2,$66	 	 E
+coprocerr		Main	$2,$68	@92	 E
+trap5err		Main	$2,$6C	@9A	 E
+trap6err		Main	$2,$6E	@A2	 E
+a_syserror		Main	$2,$10A	@AA	 
+IsNonFatalSysErr		Main	$2,$1CE	 	 
+BeginKernelStack		Main	$2,$200	@B2	 
+EndKernelStack		Main	$2,$23A	 	 
+a_osdispatch		Main	$2,$256	@BA	 
+SETTRAPADDRESS_GLUE		Main	$2,$2EE	 	 
+OverlayRecoverHandle		Main	$2,$2FC	@C2	 
+PROCESSMGR_GZPROC_GLUE		Main	$2,$322	@CA	 
+a_settrapaddress		Main	$2,$358	@D2	 
+a_newhandle		Main	$2,$36A	@DA	 
+a_handlezone		Main	$2,$3E6	@E2	 
+a_recoverhandle		Main	$2,$41C	@EA	 
+a_reallochandle		Main	$2,$446	@F2	 
+#0001		Main	$2,$4BC	 	 #
+a_disposhandle		Main	$2,$4BC	@FA	 E
+a_handtohand		Main	$2,$4F8	@102	 
+a_open		Main	$2,$51E	@10A	 
+GetMapHdlFromRefNum		Main	$2,$5A0	@112	 
+a_openrf		Main	$2,$5CE	@11A	 
+a_close		Main	$2,$644	@122	 
+#0002		Main	$2,$68E	 	 #
+a_getvol		Main	$2,$68E	@12A	 E
+a_getvolinfo		Main	$2,$694	@132	 E
+a_hfsdispatch		Main	$2,$69A	@13A	 E
+#0003		Main	$2,$6E8	 	 #
+a_mountvol		Main	$2,$726	@142	 E
+a_offline		Main	$2,$770	@14A	 E
+a_eject		Main	$2,$77E	@152	 E
+a_unmountvol		Main	$2,$7C2	@15A	 E
+a_getscrap		Main	$2,$806	@162	 
+#0004		Main	$2,$828	 	 #
+a_zeroscrap		Main	$2,$828	@16A	 E
+a_putscrap		Main	$2,$82E	@172	 E
+a_pack3		Main	$2,$84E	@17A	 
+a_drawmenubar		Main	$2,$8B4	@182	 
+a_postevent		Main	$2,$8DC	@18A	 
+a_launch		Main	$2,$986	@192	 
+a_osreserved		Main	$2,$992	@19A	 
+a_wakeup		Main	$2,$994	@1A2	 
+MyPrefixRelString		Main	$2,$99E	@1AA	 
+MyRelString		Main	$2,$9B4	@1B2	 
+a_checkload		Main	$2,$9C8	@1BA	 
+SetOldCheckLoad		Main	$2,$9F6	@1C2	 E
+a_updateresfile		Main	$2,$A00	@1CA	 
+a_getresattrs		Main	$2,$A16	@1D2	 
+a_releaseresource		Main	$2,$A32	@1DA	 
+a_getnamedresource		Main	$2,$A48	@1E2	 
+a_sizersrc		Main	$2,$A68	@1EA	 
+a_getresource		Main	$2,$A84	@1F2	 
+a_setgrowzone		Main	$2,$B0A	@1FA	 
+#0005		Main	$2,$B22	 	 #
+MyNewGestalt		Main	$2,$B40	@202	 E
+ZOOMRECT		Main	$2,$B56	@20A	 
+FloatMainUp		Main	$2,$C5A	@212	 
+GetDrvrResourceAndInfo		Main	$2,$C62	@21A	 
+CheckUnitTableEntry		Main	$2,$CC6	@222	 
+CORELAUNCHDESKACCESSORY		Main	$2,$D06	 	 
+C_OPENDESKACC		Main	$2,$EF0	@22A	 
+C_LAUNCHDESKACCESSORY		Main	$2,$F62	@232	 
+C_SYSEDIT		Main	$2,$F90	@23A	 
+C_SYSTEMMENU		Main	$2,$FFE	@242	 
+C_SYSTEMCLICK		Main	$2,$10EE	@24A	 
+C_SYSTEMEVENT		Main	$2,$1132	@252	 
+OVERLAYSYSTEMEVENT		Main	$2,$12A0	@25A	 
+SetOverlaySystemEvent		Main	$2,$12EC	 	 
+LimitFrontSleepForDriversSake		Main	$2,$130A	 	 
+LimitBackSleepForDriversSake		Main	$2,$13AE	 	 
+GiveLocalDriversTime		Main	$2,$147A	 	 
+C_SYSTEMTASK		Main	$2,$1536	@262	 
+IsMacJmpDebugger		Main	$2,$15AE	 	 
+SysErrRecover		Main	$2,$15CC	 	 
+C_WAITNEXTEVENT		Main	$2,$1640	@26A	 
+C_GETNEXTEVENT		Main	$2,$1706	@272	 
+C_EVENTAVAIL		Main	$2,$172A	@27A	 
+event_common		Main	$2,$174E	 	 
+GetNextDeskUpdateEvent		Main	$2,$1D30	 	 
+pollmouse		Main	$2,$1D94	@282	 
+GetNextPseudoEvent		Main	$2,$1E02	 	 
+PostPseudoEvent		Main	$2,$1E74	@28A	 
+imLayerKeyDown		Main	$2,$1F0A	 	 
+GetFakeKeyEvent		Main	$2,$1F76	 	 
+C_POSTFAKEKEYDOWN		Main	$2,$2000	@292	 
+C_POSTTEXT		Main	$2,$20B4	@29A	 
+OSEventAvailForFront		Main	$2,$2170	 	 
+C_STILLDOWN		Main	$2,$2184	@2A2	 
+C_WAITMOUSEUP		Main	$2,$21CE	@2AA	 
+C_REQUESTVOLUMENOTIFICATION		Main	$2,$2208	@2B2	 
+C_DECLINEVOLUMENOTIFICATION		Main	$2,$2274	@2BA	 
+VNKill		Main	$2,$2318	@2C2	 
+ResetStandardFileVol		Main	$2,$237C	 	 
+NotifyVolumeAction		Main	$2,$23D2	 	 
+NotifyVolumeGoodbye		Main	$2,$2452	 	 
+DecomposeWD		Main	$2,$24D2	@2CA	 
+CHECKIFBACKINGWD		Main	$2,$252C	 	 
+C_TEMPMAXMEM		Main	$2,$2562	@2D2	 
+C_TEMPFREEMEM		Main	$2,$2598	@2DA	 
+C_TEMPTOPMEM		Main	$2,$25F0	@2E2	 
+C_SYSZONEFLOATSIZES		Main	$2,$2616	@2EA	 
+GMBlk		Main	$2,$2664	@2F2	 
+ProcessMgrNewHandle		Main	$2,$26CA	 	 
+C_TEMPNEWHANDLE		Main	$2,$270A	@2FA	 
+LikelyTempMemHList		Main	$2,$278A	 	 
+InCurrTempMem		Main	$2,$27D4	 	 
+RemoveCurrTempMem		Main	$2,$282A	 	 
+RecoverCurrTempHdl		Main	$2,$288A	 	 
+C_TEMPHLOCK		Main	$2,$28E2	@302	 
+C_TEMPHUNLOCK		Main	$2,$28FC	@30A	 
+C_TEMPDISPOSEHANDLE		Main	$2,$2916	@312	 
+MYGROWZONE		Main	$2,$2930	@31A	 
+SafeSetGrowZone		Main	$2,$29F8	 	 
+StraddleBlockSize		Main	$2,$2A56	@322	 
+ProcessMgrMaxBlock		Main	$2,$2AAE	 	 
+IsEnabledItem		Main	$2,$2B04	 	 
+MYIUTEXTORDER		Main	$2,$2B44	@32A	 
+MenuItemAddress		Main	$2,$2B92	@332	 
+MenuSelectionGivenName		Main	$2,$2BDE	@33A	 
+ApplyToAllAppleMenus		Main	$2,$2C48	@342	 
+C_ADDRESMENU		Main	$2,$2C7C	@34A	 
+CheckItemNameAndCharForCutCopy		Main	$2,$2E2A	 	 
+C_MENUSELECT		Main	$2,$2EA8	@352	 
+C_MENUKEY		Main	$2,$2F3A	@35A	 
+C_SETCURSOR		Main	$2,$2F90	@362	 
+ItemNumFromItemPtr		Main	$2,$2FD2	 	 
+StringToAppleItemHdl		Main	$2,$301C	@36A	 
+C_GETAUXMENUITEM		Main	$2,$306E	@372	 
+FLUSHICON		Main	$2,$31E4	@37A	 
+GETPROCESSICON		Main	$2,$3212	@382	 
+ChangeIconicTitle		Main	$2,$32D6	 	 
+AdjustApplicationMenu		Main	$2,$32FC	@38A	 
+GetProcessIconCache		Main	$2,$3430	@392	 
+MakeHidingString		Main	$2,$34C6	@39A	 
+InsertAppInApplicationMenu		Main	$2,$3508	 	 
+DeleteAppFromApplicationMenu		Main	$2,$35CA	@3A2	 
+PEntryFromApplicationMenuItem		Main	$2,$361E	 	 
+ApplicationMenuItemFromPEntry		Main	$2,$3646	@3AA	 
+GetApplicationMenuLeftCoord		Main	$2,$3670	@3B2	 
+RemoveFromAppleMenuList		Main	$2,$36C2	 	 
+InTypeList		Main	$2,$36E8	 	 
+AcceptedByFileFilter		Main	$2,$3726	 	 
+CopyWDToCurProc		Main	$2,$379E	 	 
+IsForcedOpen		Main	$2,$37F4	 	 
+C_GETPROCESSTRAPADDRESS		Main	$2,$39E4	@3BA	 
+C_SETPROCESSTRAPADDRESS		Main	$2,$3AAA	@3C2	 
+c_settrapaddress		Main	$2,$3B3E	 	 
+GetApplPatch		Main	$2,$3C0E	 	 
+UpdatePatchRegistry		Main	$2,$3C5A	 	 
+AddApplPatch		Main	$2,$3D7E	 	 
+GetRealTrapAddr		Main	$2,$3DEC	 	 
+save_or_restore_dispatch		Main	$2,$3E4C	@3CA	 
+kill_dispatch		Main	$2,$3ED2	@3D2	 
+InitApplPatchTable		Main	$2,$3F06	@3DA	 
+InitPuppets		Main	$2,$3F48	@3E2	 
+PuppetKill		Main	$2,$3F96	@3EA	 
+CoreRequestScratchSwitchTask		Main	$2,$3FA4	@3F2	 
+DOREQUESTSCRATCHSWITCHTASK		Main	$2,$4026	@3FA	 
+DOGETACTIVETASKINFO		Main	$2,$4094	@402	 
+DOGETSWITCHINFO		Main	$2,$4114	@40A	 
+DOCANCELSWITCH		Main	$2,$4146	@412	 
+CancelSwitchWithError		Main	$2,$41EE	 	 
+AddInstrsHdl		Main	$2,$4220	 	 
+PushInstrsHdl		Main	$2,$4282	@41A	 
+DumpFirstInstr		Main	$2,$4324	 	 
+GetActiveInstrsHdl		Main	$2,$436A	 	 
+GetNextPuppetEvent		Main	$2,$4392	 	 
+Get1MenuStrings		Main	$2,$496E	 	 
+GetMenuStrings		Main	$2,$49BC	 	 
+CheckLocalPt		Main	$2,$4A0A	 	 
+SetMousePosition		Main	$2,$4AB2	 	 
+PuppetForceButtonDown		Main	$2,$4AE6	 	 
+generate_mousedown_in_menubar		Main	$2,$4B18	 	 
+q_push		Main	$2,$4B40	@422	 
+q_pop		Main	$2,$4B6C	@42A	 
+llsetMatch		Main	$2,$4B84	@432	 
+llcheck		Main	$2,$4B96	@43A	 
+llsetlist		Main	$2,$4BE0	@442	 
+llsetsize		Main	$2,$4BEE	@44A	 
+llinit		Main	$2,$4C00	 	 
+llhead		Main	$2,$4C56	@452	 
+lltail		Main	$2,$4C68	@45A	 
+llnext		Main	$2,$4C7C	@462	 
+llprevious		Main	$2,$4CA6	@46A	 
+llretrieve		Main	$2,$4CD4	@472	 
+lladd		Main	$2,$4CEC	@47A	 
+lladdhead		Main	$2,$4D5A	 	 
+lldelete		Main	$2,$4DB4	@482	 
+ll_length		Main	$2,$4E8E	@48A	 
+ApplyToAllRefEntries		Main	$2,$4E9E	 	 
+ClearSharingBitFromEntry		Main	$2,$4F12	@492	 
+ClearSharingBits		Main	$2,$4F30	 	 
+ResetSharedBitForEntry		Main	$2,$4FAA	@49A	 
+C_UPDATERESFILE		Main	$2,$4FD4	 	 
+C_RELEASERESOURCE		Main	$2,$5034	 	 
+C_GETRESATTRS		Main	$2,$50DE	 	 
+GetMapHdlInOtherChainFromRefNum		Main	$2,$5128	 	 
+C_GETNAMEDRESOURCE		Main	$2,$5172	 	 
+C_SIZERSRC		Main	$2,$51EA	 	 
+AddToFrontProcessQueue		Main	$2,$523E	@4A2	 
+PopFrontProcessQueue		Main	$2,$528A	@4AA	 
+RemoveFromFrontProcessQueue		Main	$2,$52AE	@4B2	 
+OrphanScrapIntoPartition		Main	$2,$5302	@4BA	 
+DisposeOrphanedScrap		Main	$2,$53AC	@4C2	 
+src_scrap_setup		Main	$2,$53D0	@4CA	 
+StartForegroundSwitch		Main	$2,$5424	 	 
+SetThirdSrcCoercionState		Main	$2,$54CA	@4D2	 
+SetFirstDstCoercionState		Main	$2,$552E	@4DA	 
+CheckForCutCopySysEditCmd		Main	$2,$55BC	 	 
+CheckForCutCopyMenuKey		Main	$2,$55F0	 	 
+FindCutCopyItems		Main	$2,$5644	@4E2	 
+SyncSIZEInfo		Main	$2,$56B0	 	 
+GetSizeInfo		Main	$2,$571A	@4EA	 
+StandardLaunch		Main	$2,$57C2	@4F2	 
+C_LAUNCH		Main	$2,$59AA	 	 
+PutOnSleepQueue		Main	$2,$5BDC	 	 
+C_SLEEPPROCESS		Main	$2,$5C58	@4FA	 
+clkint		Main	$2,$5CAA	@502	 
+PushOnStateList		Main	$2,$5CF0	@50A	 
+RemoveFromStateList		Main	$2,$5D20	@512	 
+RoustSleepers		Main	$2,$5D66	 	 
+CancelSleep		Main	$2,$5DC2	@51A	 
+switch_task		Main	$2,$5DEE	@522	 
+C_INITWINDOWS		Main	$2,$5EFE	@52A	 
+PortListKill		Main	$2,$6002	 	 
+QDKill		Main	$2,$606A	@532	 
+INITZONE		Main	$2,$6082	@53A	 
+GETHANDLESIZE		Main	$2,$608E	@542	 
+NGETTRAPADDRESS		Main	$2,$609C	@54A	 
+NSETTRAPADDRESS		Main	$2,$60B0	@552	 
+PBCLOSE		Main	$2,$60C4	@55A	 
+PBREAD		Main	$2,$60D6	@562	 
+PBWRITE		Main	$2,$60E8	@56A	 
+PBCONTROL		Main	$2,$60FA	@572	 
+GETVOL		Main	$2,$610C	 	 
+SETVOL		Main	$2,$612E	@57A	 
+PBOPENWD		Main	$2,$614E	@582	 
+PBCLOSEWD		Main	$2,$6164	 	 
+PBGETWDINFO		Main	$2,$617A	 	 
+PBGETFCBINFO		Main	$2,$6190	@58A	 
+PBGETCATINFO		Main	$2,$61A6	@592	 
+PBHGETFINFO		Main	$2,$61BC	@59A	 
+PBOPENDF		Main	$2,$61CE	@5A2	 
+HANDTOHAND		Main	$2,$61E4	@5AA	 
+PTRTOHAND		Main	$2,$61FA	@5B2	 
+PPCOPEN		Main	$2,$6216	@5BA	 
+PPCINFORM		Main	$2,$622A	@5C2	 
+PPCACCEPT		Main	$2,$623E	@5CA	 
+PPCREJECT		Main	$2,$6252	@5D2	 
+PPCWRITE		Main	$2,$6266	@5DA	 
+PPCREAD		Main	$2,$627A	@5E2	 
+PPCEND		Main	$2,$628E	@5EA	 
+PPCCLOSE		Main	$2,$62A2	@5F2	 
+IPCLISTPORTS		Main	$2,$62B6	@5FA	 
+DELETEUSERIDENTITY		Main	$2,$62CA	@602	 
+STARTSECURESESSION		Main	$2,$62D8	@60A	 
+LDIVTS		Main	$2,$62E8	 	 
+LDIVT		Main	$2,$62F0	@612	 E
+ULDIVTS		Main	$2,$62F8	 	 
+ULDIVT		Main	$2,$6300	@61A	 E
+LMODTS		Main	$2,$6308	 	 
+LMODT		Main	$2,$6310	 	 E
+ULMODTS		Main	$2,$6336	 	 
+ULMODT		Main	$2,$633E	 	 E
+ size Main $638E
+
+ seg kernel_segment 3
+a_exittoshell		kernel_segment	$3,$0	@622	 
+InitializeProcess		kernel_segment	$3,$16	@62A	 
+FPInit		kernel_segment	$3,$1C	 	 
+SwitchAllRegs		kernel_segment	$3,$24	@632	 
+SwitchCPURegs		kernel_segment	$3,$60	@63A	 
+disable		kernel_segment	$3,$80	@642	 
+spl		kernel_segment	$3,$90	@64A	 
+AtomicVBLSave		kernel_segment	$3,$A2	 	 
+dummyvbl		kernel_segment	$3,$114	 	 
+save_lmemtab		kernel_segment	$3,$11C	 	 
+restore_lmemtab		kernel_segment	$3,$152	 	 
+FloatKernelUp		kernel_segment	$3,$188	@652	 
+FindKeywordParameter		kernel_segment	$3,$190	 	 
+ExamineDocList		kernel_segment	$3,$1E2	 	 
+NextListParam		kernel_segment	$3,$25E	@65A	 
+SendInstructions		kernel_segment	$3,$286	 	 
+SendGenericInstruction		kernel_segment	$3,$2F4	 	 
+AppFileAndDocList		kernel_segment	$3,$35C	 	 
+FileIDToAppFile		kernel_segment	$3,$424	@662	 
+SendFileInstruction		kernel_segment	$3,$4F2	 	 
+TranslateAppleEvent		kernel_segment	$3,$5C0	@66A	 
+postTranslationResult		kernel_segment	$3,$680	@672	 
+AEParmToAppParmHandle		kernel_segment	$3,$6A0	 	 
+AppParmHandleToAEParm		kernel_segment	$3,$816	 	 
+SendSystemQuit		kernel_segment	$3,$938	 	 
+ContinueQuitAll		kernel_segment	$3,$9C2	 	 
+CancelQuitAll		kernel_segment	$3,$A82	@67A	 
+HandleSystemQuit		kernel_segment	$3,$AC0	 	 
+AnswerWasFromQuitAll		kernel_segment	$3,$AF6	 	 
+HandleFeedback		kernel_segment	$3,$B84	 	 
+HandleSystemMessage		kernel_segment	$3,$C64	@682	 
+postResult		kernel_segment	$3,$D2E	 	 
+C_REGISTERDEBUGGER		kernel_segment	$3,$E4E	@68A	 
+C_READWRITEPROCESSMEMORY		kernel_segment	$3,$EDC	@692	 
+C_READWRITEPROCESSFPUREGS		kernel_segment	$3,$F88	@69A	 
+AddToHList		kernel_segment	$3,$FDA	@6A2	 
+InHList		kernel_segment	$3,$103C	@6AA	 
+RecoverHListElem		kernel_segment	$3,$1084	@6B2	 
+RemoveFromHList		kernel_segment	$3,$10D6	@6BA	 
+GetFirstHListElem		kernel_segment	$3,$113C	@6C2	 
+ApplyToHListElems		kernel_segment	$3,$1168	@6CA	 
+DestroyHList		kernel_segment	$3,$11A6	 	 
+C_GETLAYER		kernel_segment	$3,$11EC	@6D2	 
+C_LAYERINSERT		kernel_segment	$3,$1216	@6DA	 
+C_LAYERDELETE		kernel_segment	$3,$1226	@6E2	 
+C_LNEWWINDOW		kernel_segment	$3,$123A	@6EA	 
+C_LCLOSEWINDOW		kernel_segment	$3,$1248	@6F2	 
+C_LCALCVIS		kernel_segment	$3,$1256	@6FA	 
+C_LCVBEHIND		kernel_segment	$3,$1266	@702	 
+C_LPAINTONE		kernel_segment	$3,$1278	@70A	 
+C_LPAINTBEHIND		kernel_segment	$3,$128A	@712	 
+C_LSHOWHIDE		kernel_segment	$3,$129C	@71A	 
+C_LCLIPABOVE		kernel_segment	$3,$12AC	@722	 
+C_MAKETOPLAYER		kernel_segment	$3,$12D8	@72A	 
+C_LAYERCLOSE		kernel_segment	$3,$1354	@732	 
+C_LAYERINIT		kernel_segment	$3,$1380	@73A	 
+C_LGETNEXTLAYER		kernel_segment	$3,$13DC	@742	 
+C_LAYERFIND		kernel_segment	$3,$143E	@74A	 
+C_LGETAUXWIN		kernel_segment	$3,$1494	@752	 
+C_LCOLORINVALRECT		kernel_segment	$3,$14D4	@75A	 
+HIDELAYER		kernel_segment	$3,$1500	@762	 
+ShowHideOthers		kernel_segment	$3,$15F6	@76A	 
+FindAppBaseLayer		kernel_segment	$3,$1628	@772	 
+CANCELUPDATEACTION		kernel_segment	$3,$1664	@77A	 
+CancelPendingUpdates		kernel_segment	$3,$1680	@782	 
+C_NEWFLOATLAYER		kernel_segment	$3,$16A8	@78A	 
+C_DISPOSEFLOATLAYER		kernel_segment	$3,$175A	@792	 
+InsertCustomItem		kernel_segment	$3,$17A0	@79A	 
+InsertCustomItemSorted		kernel_segment	$3,$180A	@7A2	 
+C_ADDAPPLEMENUITEM		kernel_segment	$3,$194E	@7AA	 
+DeleteCustomItemFromMenu		kernel_segment	$3,$1B16	@7B2	 
+DeleteCustomItem		kernel_segment	$3,$1BA4	 	 
+DeleteAppleItem		kernel_segment	$3,$1C18	 	 
+C_DELETEAPPLEMENUITEM		kernel_segment	$3,$1CF0	@7BA	 
+SendAppleMenuSelectMsg		kernel_segment	$3,$1D26	@7C2	 
+AppleMenuCleanup		kernel_segment	$3,$1DD6	 	 
+C_KERNELLAUNCH		kernel_segment	$3,$1E1C	@7CA	 
+C_TWFGSWITCH		kernel_segment	$3,$1E4E	@7D2	 
+C_KILLPROCESS		kernel_segment	$3,$1E92	@7DA	 
+C_TWGETPID		kernel_segment	$3,$1EF6	@7E2	 
+C_TWGETPROCINFO		kernel_segment	$3,$1F2E	@7EA	 
+C_GETCURRENTPROCESS		kernel_segment	$3,$2060	@7F2	 
+C_GETSYSTEMCLIENTPROCESS		kernel_segment	$3,$20A4	@7FA	 
+C_GETNEXTPROCESS		kernel_segment	$3,$20FA	@802	 
+C_GETPROCESSFROMLAYER		kernel_segment	$3,$21AE	@80A	 
+C_SAMEPROCESS		kernel_segment	$3,$223C	@812	 
+C_GETPROCESSINFORMATION		kernel_segment	$3,$22D4	@81A	 
+C_SETFRONTPROCESS		kernel_segment	$3,$2424	@822	 
+c_Wakeup		kernel_segment	$3,$24B8	@82A	 
+C_WAKEUPPROCESS		kernel_segment	$3,$24EE	@832	 
+C_BEGINSYSTEMMODE		kernel_segment	$3,$253A	@83A	 
+C_ENDSYSTEMMODE		kernel_segment	$3,$2566	@842	 
+C_NEWDESKTOPLAYEROWNER		kernel_segment	$3,$259C	@84A	 
+C_PENTRYFROMPROCESSSERIALNUMBER		kernel_segment	$3,$25DC	@852	 
+C_DISABLESWITCHING		kernel_segment	$3,$2640	@85A	 
+C_ENABLESWITCHING		kernel_segment	$3,$2662	@862	 
+C_GETPRTYPESTRINGS		kernel_segment	$3,$268A	@86A	 
+C_SETPRTYPESTRINGS		kernel_segment	$3,$271E	@872	 
+C_TWPOSTALLPSEUDOEVENT		kernel_segment	$3,$2786	@87A	 
+C_TWPOSTPSEUDOEVENT		kernel_segment	$3,$279C	@882	 
+C_SETSTDFILEDIR		kernel_segment	$3,$27AC	@88A	 
+C_BACKGROUNDNOTIFY		kernel_segment	$3,$27BC	@892	 
+C_INLINEAWARE		kernel_segment	$3,$27CA	@89A	 
+C_NEWTSMLAYEROWNER		kernel_segment	$3,$2824	@8A2	 
+C_ROUTEEVENTTOSWM		kernel_segment	$3,$2860	@8AA	 
+NewProcessEntryClear		kernel_segment	$3,$2890	 	 
+DisposeProcessEntry		kernel_segment	$3,$2918	 	 
+NewProcess		kernel_segment	$3,$292A	 	 
+userret		kernel_segment	$3,$2CFC	@8B2	 
+CreateProcess		kernel_segment	$3,$2D06	 	 
+InitHeapZone		kernel_segment	$3,$3018	 	 
+InitLowMemory		kernel_segment	$3,$30AC	 	 
+GetCeilingPtr		kernel_segment	$3,$317A	 	 
+GetProcessMemory		kernel_segment	$3,$321C	 	 
+GetFinderInfoForFile		kernel_segment	$3,$3348	 	 
+HandleShellDeath		kernel_segment	$3,$33DA	 	 
+DisposeProcessMemory		kernel_segment	$3,$34DE	 	 
+MenuKill		kernel_segment	$3,$3588	 	 
+NMKill		kernel_segment	$3,$35C8	 	 
+FMKill		kernel_segment	$3,$363E	@8BA	 
+MakeSynStrikesPurgeable		kernel_segment	$3,$3714	@8C2	 
+SendDeathNotice		kernel_segment	$3,$3764	 	 
+C_EXITTOSHELL		kernel_segment	$3,$3842	 	 
+PEntryFromPID		kernel_segment	$3,$3B7A	@8CA	 
+EqualPSN		kernel_segment	$3,$3BB2	@8D2	 
+PEntryFromPSN		kernel_segment	$3,$3BE2	@8DA	 
+PEntryFromFileSpec		kernel_segment	$3,$3C3E	@8E2	 
+BringProcessToFront		kernel_segment	$3,$3CD6	@8EA	 
+imLayerMouseDown		kernel_segment	$3,$3D62	 	 
+SendEventToSWMDriver		kernel_segment	$3,$3E18	@8F2	 
+fg_resched		kernel_segment	$3,$3E56	@8FA	 
+cpu_resched		kernel_segment	$3,$409A	@902	 
+nexttask		kernel_segment	$3,$40DC	 	 
+nextback		kernel_segment	$3,$4214	 	 
+PrepareForUpdate		kernel_segment	$3,$425A	 	 
+ActivateTopWindow		kernel_segment	$3,$4288	 	 
+PutUpFakeWindow		kernel_segment	$3,$42FC	@90A	 
+TakeDownFakeWindow		kernel_segment	$3,$4352	@912	 
+MoveScrap		kernel_segment	$3,$437A	 	 
+IsScrapOwnedByCurrentProcess		kernel_segment	$3,$443E	@91A	 
+ScrapIO		kernel_segment	$3,$4474	 	 
+Coercion_State_Engine		kernel_segment	$3,$4508	@922	 
+NewAppParmHandle		kernel_segment	$3,$4992	 	 
+SizeOfThisAppFile		kernel_segment	$3,$49BC	 	 
+NextAppFile		kernel_segment	$3,$49E6	 	 
+CopyAppParmHandle		kernel_segment	$3,$4A08	 	 
+SetAppParameters		kernel_segment	$3,$4AE4	 	 
+OpenAppWDs		kernel_segment	$3,$4BC0	 	 
+BeginApplication		kernel_segment	$3,$4CD2	 	 
+C_RDRVRINSTALL		kernel_segment	$3,$4D02	@92A	 
+save_state		kernel_segment	$3,$4D12	@932	 
+restore_state		kernel_segment	$3,$4D56	@93A	 
+kill_state		kernel_segment	$3,$4DC6	 	 
+save_lomem		kernel_segment	$3,$4DFE	 	 
+restore_lomem		kernel_segment	$3,$4ED6	 	 
+save_vbl		kernel_segment	$3,$4FDA	 	 
+restore_vbl		kernel_segment	$3,$500C	 	 
+kill_vbl		kernel_segment	$3,$506A	 	 
+save_dce		kernel_segment	$3,$50B4	 	 
+restore_dce		kernel_segment	$3,$51FC	 	 
+kill_dce		kernel_segment	$3,$5248	 	 
+GiveGoodByeKiss		kernel_segment	$3,$5358	 	 
+save_hooks		kernel_segment	$3,$539A	 	 
+restore_hooks		kernel_segment	$3,$53C6	 	 
+kill_hooks		kernel_segment	$3,$53EE	 	 
+SetOverlayRecoverHandle		kernel_segment	$3,$5406	@942	 
+GetOverlayRecoverHandleOldTrap		kernel_segment	$3,$5424	@94A	 
+MemClear		kernel_segment	$3,$5452	@952	 
+StripLeadingNulls		kernel_segment	$3,$5472	@95A	 
+NewMungedString		kernel_segment	$3,$54AC	@962	 
+StrInStrList		kernel_segment	$3,$5522	@96A	 
+GetRsrcHdlMatchingFirstLongword		kernel_segment	$3,$5564	 	 
+GetIconIDFromBundle		kernel_segment	$3,$55B0	@972	 
+OptionKeyIsDown		kernel_segment	$3,$563A	@97A	 
+ size kernel_segment $565E
+
+ seg eppc_segment 4
+FloatEppcUp		eppc_segment	$4,$0	@982	 
+ePPCInit		eppc_segment	$4,$8	@98A	 
+C_GETPORTNAMEFROMPSN		eppc_segment	$4,$6C	@992	 
+C_GETPSNFROMPORTNAME		eppc_segment	$4,$B0	@99A	 
+C_GETSPECIFICHIGHLEVELEVENT		eppc_segment	$4,$F4	@9A2	 
+copyMsg		eppc_segment	$4,$46C	 	 
+C_ACCEPTHIGHLEVELEVENT		eppc_segment	$4,$4D4	@9AA	 
+getSessionRecord		eppc_segment	$4,$5C2	 	 
+FlushHLEQueue		eppc_segment	$4,$698	 	 
+flushMsg		eppc_segment	$4,$748	@9B2	 
+fetchMsgData		eppc_segment	$4,$78A	 	 
+postReturnReceipt		eppc_segment	$4,$852	@9BA	 
+C_POSTHIGHLEVELEVENT		eppc_segment	$4,$8BA	@9C2	 
+CreateMsgQ		eppc_segment	$4,$A4E	@9CA	 
+makePortName		eppc_segment	$4,$B32	 	 
+openPPCPort		eppc_segment	$4,$C58	 	 
+doDuplicateNameOpen		eppc_segment	$4,$CE6	 	 
+GetNextPortName		eppc_segment	$4,$D26	 	 
+closePPCPort		eppc_segment	$4,$D68	 	 
+DestroyMsgQ		eppc_segment	$4,$DBE	@9D2	 
+breakConnections		eppc_segment	$4,$E6E	 	 
+DeleteBQEntries		eppc_segment	$4,$F32	 	 
+GetMsgEventBuffer		eppc_segment	$4,$101C	 	 
+RelMsgEventBuffer		eppc_segment	$4,$10A2	@9DA	 
+postMsg		eppc_segment	$4,$10C6	@9E2	 
+postMsgToPPC		eppc_segment	$4,$1120	 	 
+C_GETNEXTHIGHLEVELEVENT		eppc_segment	$4,$11AA	@9EA	 
+scanInformBQ		eppc_segment	$4,$1282	 	 
+scanWriteBQ		eppc_segment	$4,$143E	 	 
+scanReadBQ		eppc_segment	$4,$1584	 	 
+endSessionAfterAReadError		eppc_segment	$4,$1784	 	 
+GetConnectionType		eppc_segment	$4,$1802	 	 
+validateSessionID		eppc_segment	$4,$1B04	 	 
+comparePortNames		eppc_segment	$4,$1B90	 	 
+comparePortLocation		eppc_segment	$4,$1C52	 	 
+PortNameAndLocationAreEqual		eppc_segment	$4,$1D1C	 	 
+getTIDfromEppcBlk		eppc_segment	$4,$1D72	 	 
+findSessionRecord		eppc_segment	$4,$1DAE	 	 
+findFreeSessionRecord		eppc_segment	$4,$1E0A	 	 
+getSessionID		eppc_segment	$4,$1E3A	 	 
+restartPPCRead		eppc_segment	$4,$214A	 	 
+startPPCRead		eppc_segment	$4,$2188	 	 
+guestAllowed		eppc_segment	$4,$21C6	 	 
+findElement		eppc_segment	$4,$2250	@9F2	 
+byPSN		eppc_segment	$4,$226C	@9FA	 
+byPortName		eppc_segment	$4,$2288	@A02	 
+bySignature		eppc_segment	$4,$22AE	@A0A	 
+bySessionID		eppc_segment	$4,$22CC	@A12	 
+byportID		eppc_segment	$4,$22E6	@A1A	 
+PSNFromName		eppc_segment	$4,$2300	 	 
+NameFromPSN		eppc_segment	$4,$2380	 	 
+PSNFromSignature		eppc_segment	$4,$23F0	 	 
+EPPCBlkFromPSN		eppc_segment	$4,$2470	 	 
+releasePPCpb		eppc_segment	$4,$24B0	 	 
+getPPCInformPB		eppc_segment	$4,$24D0	 	 
+getPPCReadPB		eppc_segment	$4,$254C	 	 
+qPPCPb		eppc_segment	$4,$25C0	 	 
+KnockKnock		eppc_segment	$4,$25E6	@A22	 
+ size eppc_segment $26C4
+
+ seg Debugger 5
+CoreRegisterDebugger		Debugger	$5,$0	@A2A	 
+swap_state		Debugger	$5,$AE	 	 
+CoreReadWriteProcessMemory		Debugger	$5,$E6	@A32	 
+CoreReadWriteProcessFPURegs		Debugger	$5,$15A	@A3A	 
+InitDebuggerExceptions		Debugger	$5,$23A	 	 
+UnplugDebuggerExceptions		Debugger	$5,$300	 	 
+CallDebugger		Debugger	$5,$358	@A42	 
+ size Debugger $444
+
+ seg zone24_tools 6
+ZoneMPBlockPtr24		zone24_tools	$6,$0	@A4A	 
+MakeNonRelocatable24		zone24_tools	$6,$10	@A52	 
+GetProcessMgrLoFreeBytes24		zone24_tools	$6,$32	@A5A	 
+GetSystemHiFreeBytes24		zone24_tools	$6,$CC	@A62	 
+ExtendZone24		zone24_tools	$6,$142	@A6A	 
+MoveZone24		zone24_tools	$6,$198	@A72	 
+ShrinkProcessMgrZone24		zone24_tools	$6,$2CA	@A7A	 
+GetLockPtr24		zone24_tools	$6,$33C	@A82	 
+GetProcessMgrHiMaxBlock24		zone24_tools	$6,$3E8	@A8A	 
+GetHighestLargeFreeBlock24		zone24_tools	$6,$4A8	@A92	 
+GetTopBlockSize24		zone24_tools	$6,$504	@A9A	 
+FreeTop24		zone24_tools	$6,$538	@AA2	 
+ChipOffRelocFromFree24		zone24_tools	$6,$580	@AAA	 
+InitVectorTable24		zone24_tools	$6,$618	@AB2	 
+ size zone24_tools $698
+
+ seg zone32_tools 7
+ZoneMPBlockPtr32		zone32_tools	$7,$0	@ABA	 
+MakeNonRelocatable32		zone32_tools	$7,$10	@AC2	 
+GetProcessMgrLoFreeBytes32		zone32_tools	$7,$40	@ACA	 
+GetSystemHiFreeBytes32		zone32_tools	$7,$BC	@AD2	 
+ExtendZone32		zone32_tools	$7,$11E	@ADA	 
+MoveZone32		zone32_tools	$7,$160	@AE2	 
+ShrinkProcessMgrZone32		zone32_tools	$7,$25C	@AEA	 
+GetLockPtr32		zone32_tools	$7,$2CA	@AF2	 
+GetProcessMgrHiMaxBlock32		zone32_tools	$7,$2D4	@AFA	 
+GetHighestLargeFreeBlock32		zone32_tools	$7,$37C	@B02	 
+GetTopBlockSize32		zone32_tools	$7,$3CA	@B0A	 
+FreeTop32		zone32_tools	$7,$3FA	@B12	 
+ChipOffRelocFromFree32		zone32_tools	$7,$434	@B1A	 
+InitVectorTable32		zone32_tools	$7,$4A2	@B22	 
+ size zone32_tools $522
+
+ seg zone_tools 8
+InitMPBlock		zone_tools	$8,$0	@B2A	 
+PROCESSMGRSYSGZPROC		zone_tools	$8,$5A	@B32	 
+ShrinkSysHeap		zone_tools	$8,$FA	 	 
+LowerProcessMgrZoneBottom		zone_tools	$8,$1C6	 	 
+PROCESSMGRGZPROC		zone_tools	$8,$20C	@B3A	 
+ReclaimSpaceIfSysHeapLow		zone_tools	$8,$280	@B42	 
+ProcessMgrHiNewHandle		zone_tools	$8,$33A	@B4A	 
+ProcessMgrHMakeMoreMasters		zone_tools	$8,$4A6	@B52	 
+ size zone_tools $4FA
+
+ seg %A5Init 9
+_DATAINIT		%A5Init	$9,$0	 	 
+_DataInit		%A5Init	$9,$0	@B5A	 E
+uncompress_world		%A5Init	$9,$5A	 	 #
+get_rl		%A5Init	$9,$B6	 	 #
+relocate_world		%A5Init	$9,$10A	 	 #
+ZEROBUFFER		%A5Init	$9,$166	 	 #
+#0001		%A5Init	$9,$1A8	 	 #
+_A5Init3		%A5Init	$9,$1AA	 	 E
+ size %A5Init $1AA
+""".split('\n')
+
+fnames = """BuildResults/Sys/Obj/MenuMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/ResourceMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/Data.c.o.pmdmp
+BuildResults/Sys/Obj/MemoryMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/Processes.c.o.pmdmp
+BuildResults/Sys/Obj/Debugger.c.o.pmdmp
+BuildResults/Sys/Obj/Startup.c.o.pmdmp
+BuildResults/Sys/Obj/AppleEventExtensions.c.o.pmdmp
+BuildResults/Sys/Obj/MemoryMgr24Patches.c.o.pmdmp
+BuildResults/Sys/Obj/FileSystem.c.o.pmdmp
+BuildResults/Sys/Obj/Schedule.c.o.pmdmp
+BuildResults/Sys/Obj/LayerMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/ProcessMgrMisc.a.o.pmdmp
+BuildResults/Sys/Obj/Utilities.c.o.pmdmp
+BuildResults/Sys/Obj/HList.c.o.pmdmp
+BuildResults/Sys/Obj/Puppet.c.o.pmdmp
+BuildResults/Sys/Obj/PackageMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/Error.a.o.pmdmp
+BuildResults/Sys/Obj/DeskMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/SegmentLoaderPatches.c.o.pmdmp
+BuildResults/Sys/Obj/Queue.c.o.pmdmp
+BuildResults/Sys/Obj/OSDispatch.a.o.pmdmp
+BuildResults/Sys/Obj/ZoomRect.a.o.pmdmp
+BuildResults/Sys/Obj/Switch.a.o.pmdmp
+BuildResults/Sys/Obj/EventMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/MemoryMgr32Patches.c.o.pmdmp
+BuildResults/Sys/Obj/Patches.c.o.pmdmp
+BuildResults/Sys/Obj/WindowMgrPatches.c.o.pmdmp
+BuildResults/Sys/Obj/Sleep.c.o.pmdmp
+BuildResults/Sys/Obj/Switch.c.o.pmdmp
+BuildResults/Sys/Obj/OSDispatch.c.o.pmdmp
+BuildResults/Sys/Obj/Eppc.c.o.pmdmp
+BuildResults/Sys/Obj/ScrapCoercion.c.o.pmdmp
+BuildResults/Sys/Obj/Memory.c.o.pmdmp
+BuildResults/Sys/Obj/Error.c.o.pmdmp""".split()
+
+def srippify(nam):
+	return nam.split('/')[-1][:-8]
+
+fconts = []
+for f in fnames:
+	fconts.append(open(f, 'rb').read())
+
+for line in lines:
+	if '\t' in line and line[0] not in ' \t':
+		a, b, c = line.partition('\t')
+		searchfor = b'Module="%s"' % a.encode('ascii')
+		for i in range(len(fnames)):
+			if searchfor in fconts[i]:
+				line = srippify(fnames[i]) + ':' + line
+	
+	print(line)

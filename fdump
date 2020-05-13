@@ -1,0 +1,9 @@
+#!/bin/bash
+
+t="`mktemp`"
+for x in "$@"; do
+	touch "$t"
+	SimpleRez -o "$t"/..namedfork/rsrc <(echo "data 'xxxx' (0) {"; xxd -p "$x" | sed 's/^/$"/' | sed 's/$/"/'; echo "};")
+	mpw DumpCode -rt xxxx=0 "$t"
+done
+rm -f "$t"

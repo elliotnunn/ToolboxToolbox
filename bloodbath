@@ -1,0 +1,50 @@
+#!/bin/bash
+
+custer=custer
+system=cube-e
+
+cd ~/Documents/mac
+
+sh -c "cd supermario/worktree/$custer && ./.build RISC" > /tmp/result-$custer &
+sh -c "cd supermario/worktree/$system && ./.build System" > /tmp/result-$system &
+
+rm -rf /tmp/bbathrom*
+cp MacROMan/TestImages/New*/*"Mac OS ROM 9.8.1.rom" /tmp/bbathrom
+tbxi dump /tmp/bbathrom
+
+wait # for the builds above to complete
+
+echo ----------------------------------------------------------------
+echo $custer...
+cat /tmp/result-$custer
+echo ----------------------------------------------------------------
+echo $system...
+cat /tmp/result-$system
+echo ----------------------------------------------------------------
+
+threemeg=`find /tmp/bbathrom.src -iname mac68krom`
+cp supermario/worktree/$custer/BuildResults/RISC/Image/RomMondo $threemeg; rm -rf $threemeg.src
+tbxi build /tmp/bbathrom.src -o /tmp/newrom.hqx
+insertees="$insertees /tmp/newrom.hqx"
+
+Rhqx supermario/worktree/$system/BuildResults/System/System
+mv supermario/worktree/$system/BuildResults/System/System.hqx /tmp/newsys.hqx
+insertees="$insertees /tmp/newsys.hqx"
+
+cd ~/Documents/qemu
+
+insertees="$insertees ./newmxbg.hqx"
+
+cp test-template.img /tmp/test-boot.img
+hmount /tmp/test-boot.img
+for x in $insertees; do hcopy $x 'QEMU HD:System Folder:'; done
+hrename 'QEMU HD:System Folder:Extensions' 'QEMU HD:Disabled Extensions'
+humount
+
+
+./qemu-system-ppc -L pc-bios -boot c -M mac99 -m 128 -prom-env 'auto-boot?=true' -prom-env 'aapl,debug=2000000' \
+-drive file=/tmp/test-boot.img,format=raw,media=disk \
+-prom-env 'vga-ndrv?=true' -device usb-mouse -device usb-kbd \
+-netdev user,id=network01 -device sungem,netdev=network01
+
+rm -f /tmp/test-boot.img

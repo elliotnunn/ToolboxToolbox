@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+
+import sys
+from os import path
+import hashlib
+import textwrap
+
+
+# Thanks user25148: https://stackoverflow.com/questions/1131220/get-md5-hash-of-big-files-in-python
+def generate_file_md5(filename, blocksize=2**20):
+    m = hashlib.md5()
+    with open(filename, 'rb') as f:
+        while True:
+            buf = f.read(blocksize)
+            if not buf:
+                break
+            m.update(buf)
+    return m.hexdigest()
+
+
+def split_args_by_delim(xx):
+    retval = [[]]
+    for el in xx:
+        if el in ('', '--'):
+            retval.append([])
+        else:
+            retval[-1].append(el)
+    return retval
+
+
+def group_to_dict(group):
+    retval = {}
+    for filename in group:
+        key = path.basename(filename)
+        if key in retval:
+            raise ValueError('duplicate filename in same group: %r' % filename)
+        value = generate_file_md5(filename)
+        retval[key] = value
+    return retval
+
+
+def indices(container, searchfor):
+    retval = []
+    for i, el in enumerate(container):
+        if el == searchfor:
+            retval.append(i)
+    return retval
+
+
+def where_do_snakes_go(hash_list):
+    hash_do_list = list(set(hash_list))
+    hash_do_list.sort(key=hash_list.index)
+
+    hash_y_dict = {}
+    occupied_points = set()
+
+    # Next, try to cram everything else onto other lines...
+    for the_hash in hash_do_list:
+        if the_hash is None or hash_list.count(the_hash) == 1:
+            hash_y_dict[the_hash] = 0
+
+        else:
+            first_x = hash_list.index(the_hash)
+            last_x = len(hash_list) - list(reversed(hash_list)).index(the_hash) - 1
+
+            y = 1
+            while any((x, y) in occupied_points for x in range(first_x, last_x + 1)):
+                y += 1
+
+            hash_y_dict[the_hash] = y
+
+            for x in range(first_x, last_x + 1):
+                occupied_points.add((x, y))
+
+    return hash_y_dict
+
+
+def one_snake(hash_list, col_width):
+    col_x = [i * col_width + (col_width + 1) // 2 for i in range(len(hash_list))]
+
+    locs = where_do_snakes_go(hash_list)
+
+    num_lines = max(locs.values())
+
+    lines = []
+    for this_hash, hash_y in locs.items():
+        if this_hash is None: continue
+
+        while len(lines) <= hash_y:
+            lines.append([' '] * (col_width * len(hash_list)))
+
+        which = indices(hash_list, this_hash)
+        which_x = [col_x[col] for col in which]
+
+        for x in range(col_x[which[0]], col_x[which[-1]] + 1):
+            if x == col_x[which[0]]:
+                the_char = '\u2514' # '\'
+            elif x == col_x[which[-1]]:
+                the_char = '\u2518' # '/'
+            elif x in which_x:
+                the_char = '\u2534' # inv 'T'
+            else:
+                the_char = '\u2500' # '-'
+
+            lines[hash_y][x] = the_char
+
+        for ind in which:
+            lines[0][col_x[ind]] = '\u25CF' # '*'
+
+        for ind in which:
+            x = col_x[ind]
+            for y in range(1, hash_y):
+                lines[y][x] = '\u2502' # '|'
+
+    return '\n'.join(''.join(l).rstrip() for l in lines).rstrip('\n')
+
+
+# uniques_by_name is a list of (name, [hash, ...])
+def snake_table(uniques_by_name, headings=None):
+    if headings:
+        col_width = max(len(h) for h in headings) + 1
+        col_width = max(col_width, 5)
+        while col_width % 2 == 0: col_width += 1
+    else:
+        col_width = 5
+
+    gutter_width = max(len(n) for n, uu in uniques_by_name)
+
+    lines = []
+
+    for i, (name, uniques) in enumerate(uniques_by_name):
+        if lines: lines.append('')
+
+        if i % 20 == 0 and headings:
+            lines.append((' ' * gutter_width) + ' ' + ''.join(h.center(col_width) for h in headings).rstrip())
+            lines.append('')
+
+        gutter = name
+        for line in one_snake(uniques, col_width).split('\n'):
+            lines.append(gutter.rjust(gutter_width) + ' ' + line)
+            gutter = ''
+
+    return '\n'.join(lines)
+
+
+# Cheeky experiment
+if __name__ == '__main__' and sys.argv[1:2] == ['-r']:
+    import macresources
+
+    files = sys.argv[2:]
+    resfiles = [list(macresources.parse_rez_code(open(p, 'rb').read())) for p in files]
+    headings = [path.basename(p) for p in files]
+    headings = [h[:-6] if h.endswith('.rdump') else h for h in headings]
+
+    every_typeid = list(set((r.type, r.id) for rf in resfiles for r in rf))
+    every_typeid.sort(key=lambda rtypeid: (rtypeid[0].decode('mac_roman').upper(), rtypeid[0].decode('mac_roman'), rtypeid[1]))
+
+    by_typeid = {typeid: [None] * len(resfiles) for typeid in every_typeid}
+
+    for i, rf in enumerate(resfiles):
+        for r in rf:
+            by_typeid[(r.type, r.id)][i] = hash(bytes(r))
+
+    uniques_by_name = []
+    for rtype, rid in every_typeid:
+        leftcol = rtype.decode('mac_roman') + str(rid).rjust(7)
+        uniques_by_name.append((leftcol, by_typeid[(rtype, rid)]))
+
+    print(snake_table(uniques_by_name, headings=headings))
+    exit()
+
+
+if __name__ == '__main__':
+    group_lists = split_args_by_delim(sys.argv[1:])
+
+    every_filename = sorted(set(path.basename(p) for g in group_lists for p in g))
+
+    headings = [path.commonprefix([path.abspath(p) for p in group]) for group in group_lists]
+    heading_strip = path.commonprefix(headings)
+    headings = [h[len(heading_strip):].lstrip(path.sep) for h in headings]
+
+    uniques_by_name = {fn: [None] * len(group_lists) for fn in every_filename}
+    for i, group in enumerate(group_lists):
+        for p in group:
+            uniques_by_name[path.basename(p)][i] = generate_file_md5(p)
+
+    uniques_by_name = list(uniques_by_name.items())
+
+    print(snake_table(uniques_by_name, headings=headings))
