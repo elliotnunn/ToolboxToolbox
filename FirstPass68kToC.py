@@ -58,7 +58,13 @@ for i, l in enumerate(lines):
     if search(r'LINK.W +A6', l):
         firstline = i
         leading_chars = m.start()
-    if search(r'\b(RTS|RTD|JMP)\b', l):
+
+    if firstline != -1 and match(r'^(\w+):', l) and not match(r'^[0-9A-Fa-f]+$', m.group(1)):
+        name = 'NONAME'
+        firstline = -1
+        continue
+
+    if search(r'\b(RTS|RTD|JMP +\(A0\))\b', l):
         lastline = i
         if name != 'NONAME' and firstline != -1:
             procedures.append((name, firstline, lastline))
