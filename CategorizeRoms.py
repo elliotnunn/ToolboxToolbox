@@ -3,6 +3,7 @@
 import sys
 import struct
 from os import path
+import re
 
 biglist = []
 
@@ -75,10 +76,31 @@ for rompath in sys.argv[1:]:
         if b >= 0x12f1: info.append("EricksonSndMgr")
         if b == 0x12f1: info.append("EricksonMistake")
 
+    if b'\x08.netBOOT' in rom:
+        info.append('netBOOT')
 
-    biglist.append((order, ' '.join(info), rompath))
+    drvrs = re.finditer(rb'\x04\.MPP', rom)
+    drvrs = [m.start() - 18 for m in drvrs] # the actual possible drvr starts
+    for ofs in drvrs:
+        if rom[ofs] == 0: continue
+        if any(rom[ofs+1:ofs+8]): continue
+        routine_offsets = struct.unpack_from('>HHHHH', rom, ofs+8)
+        for ent in routine_offsets:
+            if ent < 0x1a or ent % 2 != 0: break
+        else:
+            info.append('MPP=%d' % rom[ofs+24])
+
+    biglist.append((order, ' '.join(info), rompath, rom))
 
 biglist.sort()
 wid = max(len(s) for _, s, *_ in biglist)
-for o, s, p in biglist:
-    print(s.ljust(wid + 4), p)
+
+rom_paths = {}
+for o, s, p, rom in biglist:
+    rom_paths.setdefault(rom, [s]).append(p)
+
+for rom, (s, *pp) in rom_paths.items():
+    left = s.ljust(wid)
+    for p in pp:
+        print(left + '    ' + p)
+        left = ' ' * wid
