@@ -110,6 +110,11 @@ for name, firstline, lastline in procedures:
     # Now we have a clean statement list that we can do transformations on.
 
 
+    # Transformation: A7 to SP
+    statements = re.sub(r'(?<!\$)\bA7\b', 'SP', statements)
+
+
+
     # Transformation: get rid of unused labels
     def label_if_nonunique(m):
         if len(re.findall(r'\b' + m.group()[:-1] + r'\b', statements)) > 1:
@@ -152,7 +157,7 @@ for name, firstline, lastline in procedures:
 
     # Transformation: change #$70777063 to #'pwpc'
     def longliteral(m):
-        chars = bytes.fromhex(m.group(1)).decode('latin-1')
+        chars = bytes.fromhex(m.group(1)).decode('ascii', 'replace')
         if all(c.isalnum() or c in ' #' for c in chars):
             return repr(chars)
         else:
