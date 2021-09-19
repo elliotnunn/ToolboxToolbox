@@ -10,11 +10,7 @@ import string
 parser = argparse.ArgumentParser()
 parser.add_argument('src',  help='rdump file')
 parser.add_argument('dest', help='binary dest (may also create .txt file)')
-parser.add_argument('-rt', action='store', metavar='type=ID', default='CODE=0', help='jump table resource (usually CODE=0)')
 args = parser.parse_args()
-
-args.rtype = args.rt.partition('=')[0].encode('mac_roman')
-args.rid = int(args.rt.partition('=')[2])
 
 with open(args.src, 'rb') as f:
 	d = f.read()
@@ -23,11 +19,11 @@ with open(args.src, 'rb') as f:
 	else:
 		resources = list(macresources.parse_file(d))
 
-resources = [r for r in resources if r.type == args.rtype and r.id >= args.rid]
+resources = [r for r in resources if r.type == b'CODE' and r.id >= 0]
 resources.sort(key=lambda r: r.id)
 
-if not resources or resources[0].id != args.rid:
-    sys.exit('Resource %s not found in %s' % (args.rt, args.src))
+if not resources or resources[0].id != 0:
+    sys.exit('CODE 0 not found in %s' % args.src)
 
 jt_resource, *other_resources = resources
 
@@ -62,9 +58,9 @@ with open(args.dest + '.py', 'w') as idascript:
     segnames = {}
     for r in other_resources:
         if r.name:
-            segnames[r.id - args.rid] = ''.join(c for c in r.name if c in (string.ascii_letters + string.digits))
+            segnames[r.id] = ''.join(c for c in r.name if c in (string.ascii_letters + string.digits))
         else:
-            segnames[r.id - args.rid] = f'seg_{r.id-args.rid:X}'
+            segnames[r.id] = f'seg_{r.id:X}'
 
     jt_size, a5_offset_of_jt = struct.unpack_from('>LL', jt_resource, 8)
 
@@ -73,10 +69,10 @@ with open(args.dest + '.py', 'w') as idascript:
         if be_3f3c != 0x3f3c or be_a9f0 != 0xa9f0: break
         ofs += 4 # not sure what the leading stuff is?
 
-        bigboy_ofs = ((segnum - args.rid) * 0x10000) + ofs
+        bigboy_ofs = ((segnum) * 0x10000) + ofs
         a5_ofs = jt_ofs - 16 + a5_offset_of_jt + 2
 
-        cool_name = f'{segnames[segnum - args.rid]}_'
+        cool_name = f'{segnames[segnum]}_'
         if bigboy_ofs in namedict:
             cool_name += namedict[bigboy_ofs]
             del namedict[bigboy_ofs]
