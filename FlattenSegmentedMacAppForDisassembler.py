@@ -17,7 +17,11 @@ args.rtype = args.rt.partition('=')[0].encode('mac_roman')
 args.rid = int(args.rt.partition('=')[2])
 
 with open(args.src, 'rb') as f:
-    resources = list(macresources.parse_rez_code(f.read(), original_file=f.name))
+	d = f.read()
+	if f.name.endswith('.rdump'):
+		resources = list(macresources.parse_rez_code(d, original_file=f.name))
+	else:
+		resources = list(macresources.parse_file(d))
 
 resources = [r for r in resources if r.type == args.rtype and r.id >= args.rid]
 resources.sort(key=lambda r: r.id)
