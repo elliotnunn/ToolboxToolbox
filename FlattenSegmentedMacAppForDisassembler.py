@@ -29,7 +29,10 @@ jt_resource, *other_resources = resources
 
 bigboy = bytearray()
 for i, r in enumerate(resources):
-    while len(bigboy) < i * 0x10000:
+    if i == 0:
+        continue
+
+    while len(bigboy) < i * 0x100000:
         bigboy.append(0)
     bigboy.extend(r)
 
@@ -76,7 +79,7 @@ with open(args.dest + ".py", "w") as idascript:
             break
         ofs += 4  # not sure what the leading stuff is?
 
-        bigboy_ofs = ((segnum) * 0x10000) + ofs
+        bigboy_ofs = ((segnum) * 0x100000) + ofs
         a5_ofs = jt_ofs - 16 + a5_offset_of_jt + 2
 
         cool_name = f"{segnames[segnum]}_"
@@ -103,5 +106,5 @@ with open(args.dest + ".py", "w") as idascript:
             print(f'MakeCode(0x{bb_i-2:X}); op_man(0x{bb_i-2:X}, 0, "{cool_name}")', file=idascript)
 
     for bigboy_ofs, name in sorted(namedict.items()):
-        cool_name = f"{segnames[bigboy_ofs >> 16]}_{name}"
+        cool_name = f"{segnames[bigboy_ofs >> 20]}_{name}"
         print(f'MakeFunction(0x{bigboy_ofs:X}); MakeName(0x{bigboy_ofs:X}, "{cool_name}")', file=idascript)
