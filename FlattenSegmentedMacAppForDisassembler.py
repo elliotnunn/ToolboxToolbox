@@ -42,7 +42,7 @@ with open(args.dest + '.py', 'w') as idascript:
         if bigboy[b:b+2] == b'NV': # link a6, starting a compiled function
             for c in range(b+2, len(bigboy), 2):
                 if bigboy[c:c+2] == b'NV': break
-                if bigboy[c] & 0xF0 == 0x80:
+                if 0x81 <= bigboy[c] < 0xb0:
                     strlen = bigboy[c] & 0x0F
                     if strlen < 2: break
                     namestr = bigboy[c+1:c+1+strlen]
@@ -50,7 +50,7 @@ with open(args.dest + '.py', 'w') as idascript:
                     namestr = namestr.decode('latin-1')
                     if not all(c in (string.ascii_letters + string.digits + '_') for c in namestr): break
                     if strlen % 2 == 0 and bigboy[c+1+strlen:c+1+strlen+1] not in b'\0': break
-                    
+
                     namedict[b] = namestr
                     break
 

@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+
+import machfs
+import shutil
+import argparse
+import os
+from pathlib import Path
+
+args = argparse.ArgumentParser()
+args.add_argument('src', metavar='INPUT', type=Path, help='Disk image')
+args.add_argument('dir', metavar='OUTPUT', type=Path, help='Destination folder')
+args = args.parse_args()
+
+vol = machfs.Volume()
+vol.read(args.src.read_bytes())
+
+try:
+    shutil.rmtree(args.dir)
+except FileNotFoundError:
+    pass
+
+args.dir.mkdir(parents=True)
+
+for hpath, obj in vol.iter_paths():
+    # No funny characters please
+    if not all(32 <= ord(n) for n in ''.join(hpath)): continue
+
+    upath = args.dir
+    for el in hpath:
+        upath /= el.replace('/', ':')
+
+    if isinstance(obj, machfs.Folder):
+        upath.mkdir(exist_ok=True)
+    else:
+        upath.write_bytes(obj.data)
+
+        if obj.type + obj.creator != b'????????':
+            (upath.parent/'FINDER.DAT').mkdir(exist_ok=True)
+            (upath.parent/'FINDER.DAT'/upath.name).write_bytes(obj.type + obj.creator)
+
+        if obj.rsrc:
+            (upath.parent/'RESOURCE.FRK').mkdir(exist_ok=True)
+            (upath.parent/'RESOURCE.FRK'/upath.name).write_bytes(obj.rsrc)
