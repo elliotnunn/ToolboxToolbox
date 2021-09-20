@@ -72,6 +72,9 @@ with open(args.dest + ".py", "w") as idascript:
             if not all(c in OKCHARS for c in name):
                 continue
 
+            print(f"idaapi.make_ascii_string(0x{addr(r.id)+i+2:X}, {(namelen+2)&~1}, ASCSTR_PASCAL)", file=idascript)
+            print(f"set_cmt(0x{addr(r.id)+i+2:X}, 'MacsBug symbol', 0)", file=idascript)
+
             possibles = []
             for j in reversed(range(lastfound, i, 2)):
                 if r[j : j + 2] == b"Nu":
