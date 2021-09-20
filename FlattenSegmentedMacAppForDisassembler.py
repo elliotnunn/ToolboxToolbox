@@ -90,7 +90,7 @@ with open(args.dest + ".py", "w") as idascript:
     interseg_calls = {}
     for r in other_resources:
         for i in range(0, len(r) - 3, 2):
-            if r[i : i + 2] in (b"\x4e\xad", b"\x48\x6d"):
+            if r[i : i + 2] in (b"\x4e\xad", b"\x48\x6d") or (r[i] == 0x41 and r[i + 1] & 0xF8 == 0xE8):
                 (targ,) = struct.unpack_from(">h", r, i + 2)
                 if targ > 0:
                     interseg_calls.setdefault(targ, []).append(addr(r.id) + i)
