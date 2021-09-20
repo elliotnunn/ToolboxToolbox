@@ -7,7 +7,7 @@ import struct
 import string
 
 
-OKCHARS = string.ascii_letters + string.digits + "_"
+OKCHARS = string.ascii_letters + string.digits + "_%"
 
 
 def addr(seg):
