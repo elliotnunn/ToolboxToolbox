@@ -44,11 +44,33 @@ with open(args.dest, "wb") as f:
 
 jump_table = []  # (a5_ofs, segnum, seg_ofs)
 (jt_size, a5_offset_of_jt) = struct.unpack_from(">LL", jt_resource, 8)
+
+thirtytwo = False
+
 for jt_ofs in range(16, 16 + jt_size, 8):
-    ofs, be_3f3c, segnum, be_a9f0 = struct.unpack_from(">HHHH", jt_resource, jt_ofs)
-    if be_3f3c != 0x3F3C or be_a9f0 != 0xA9F0:
-        break
-    jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs + 4))
+    if jt_resource[jt_ofs : jt_ofs + 8] == b"\x00\x00\xff\xff\x00\x00\x00\x00":
+        thirtytwo = True
+        continue
+
+    if thirtytwo:
+        segnum, be_a9f0, ofs = struct.unpack_from(">HHL", jt_resource, jt_ofs)
+
+        if be_a9f0 != 0xA9F0:
+            raise ValueError("32-bit jt")
+
+        rbyid = {r.id: r for r in resources}[segnum]
+        (adjust,) = struct.unpack_from(">L", r, 0x20)
+        # ofs += adjust
+
+        jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs))
+
+    else:
+        ofs, be_3f3c, segnum, be_a9f0 = struct.unpack_from(">HHHH", jt_resource, jt_ofs)
+
+        if be_3f3c != 0x3F3C or be_a9f0 != 0xA9F0:
+            raise ValueError("16-bit jt")
+
+        jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs + 4))
 
 
 with open(args.dest + ".py", "w") as idascript:
