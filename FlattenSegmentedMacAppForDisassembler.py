@@ -34,14 +34,6 @@ if not resources or resources[0].id != 0:
 
 jt_resource, *other_resources = resources
 
-bigboy = bytearray()
-for r in other_resources:
-    bigboy.extend(bytes(addr(r.id) - len(bigboy)))
-    bigboy.extend(r)
-
-with open(args.dest, "wb") as f:
-    f.write(bigboy)
-
 jump_table = {}  # a5_ofs: (segnum, seg_ofs)
 (jt_size, a5_offset_of_jt) = struct.unpack_from(">LL", jt_resource, 8)
 
@@ -125,6 +117,25 @@ def is_mxbg_str(s):
     return True
 
 
+def unpack_relocs(blob):
+    # blob = memoryview(blob)
+    while True:
+        if blob[:2] == b"\x00\x00":
+            break
+
+        elif blob[0] == 0 and blob[1] & 0x80:
+            yield ((blob[1] << 25) + (blob[2] << 17) + (blob[3] << 9) + (blob[4] << 1)) & 0xFFFFFFFF
+            blob = blob[5:]
+
+        elif blob[0] & 0x80:
+            yield ((blob[0] << 9) + (blob[1] << 1)) & 0xFFFF
+            blob = blob[2:]
+
+        else:
+            yield blob[0] << 1
+            blob = blob[1:]
+
+
 with open(args.dest + ".py", "w") as idascript:
     # Find MacsBug symbols
     namedict = {}
@@ -146,11 +157,37 @@ with open(args.dest + ".py", "w") as idascript:
 
     interseg_calls = {}
     for r in other_resources:
-        for i in range(0, len(r) - 3, 2):
-            if r[i : i + 2] in (b"\x4e\xad", b"\x48\x6d") or (r[i] == 0x41 and r[i + 1] & 0xF8 == 0xE8):
-                (targ,) = struct.unpack_from(">h", r, i + 2)
-                if targ > 0:
-                    interseg_calls.setdefault(targ, []).append(addr(r.id) + i)
+        # 32-bit segment
+        if r[:2] == b"\xFF\xFF":
+            a5relocs, pcrelocs = struct.unpack_from(">LxxxxL", r, 0x14)
+
+            ofs = 0
+            for reloc in unpack_relocs(r[a5relocs:]):
+                ofs = (ofs + reloc) & 0xFFFFFFFF  # reloc can be negative!
+                (a5offset,) = struct.unpack_from(">L", r, ofs)
+
+                # Instead of hacking IDA to treat xxxx(A5) as a function address,
+                # just stuff the actual function address in the JMP target
+                if a5offset in jump_table:
+                    target_seg, target_seg_offset = jump_table[a5offset]
+                    target_addr = addr(target_seg) + target_seg_offset
+                    struct.pack_into(">L", r, ofs, target_addr)
+
+            ofs = 0
+            for reloc in unpack_relocs(r[pcrelocs:]):
+                ofs = (ofs + reloc) & 0xFFFFFFFF  # reloc can be negative!
+
+                (target_addr,) = struct.unpack_from(">L", r, ofs)
+                target_addr += addr(r.id)
+                struct.pack_into(">L", r, ofs, target_addr)
+
+        # 16-bit segment
+        else:
+            for i in range(0, len(r) - 3, 2):
+                if r[i : i + 2] in (b"\x4e\xad", b"\x48\x6d") or (r[i] == 0x41 and r[i + 1] & 0xF8 == 0xE8):
+                    (targ,) = struct.unpack_from(">h", r, i + 2)
+                    if targ > 0:
+                        interseg_calls.setdefault(targ, []).append(addr(r.id) + i)
 
     # Make some neat names for the segments...
     segnames = {}
@@ -178,3 +215,11 @@ with open(args.dest + ".py", "w") as idascript:
     for bigboy_ofs, name in sorted(namedict.items()):
         cool_name = f"{segnames[bigboy_ofs >> 20]}${name}"
         print(f'MakeFunction(0x{bigboy_ofs:X}); MakeName(0x{bigboy_ofs:X}, "{cool_name}")', file=idascript)
+
+bigboy = bytearray()
+for r in other_resources:
+    bigboy.extend(bytes(addr(r.id) - len(bigboy)))
+    bigboy.extend(r)
+
+with open(args.dest, "wb") as f:
+    f.write(bigboy)
