@@ -73,44 +73,80 @@ for jt_ofs in range(16, 16 + jt_size, 8):
         jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs + 4))
 
 
+# From https://github.com/elliotnunn/mps/blob/master/stacktrace.go
+def macsbug_syms(blob):
+    bigmv = memoryview(blob)
+
+    for i in range(0, len(blob) - 2, 2):
+        try:
+            mv = bigmv[i:]
+            # RTS or JMP(A0)
+            if mv[:2] == b"\x4e\x75" or mv[:2] == b"\x4e\xd0":
+                j = i + 2
+
+            # RTD #<word>
+            elif mv[:3] == b"\x4e\x74\x00":
+                j = i + 4
+
+            # Not the end of a procedure
+            else:
+                continue
+
+            mv = bigmv[j:]
+            # "Old style" MacsBug symbol format
+            # Haven't done the MacApp format
+            if 0x20 <= mv[0] & 0x7F <= 0x7F and 0x20 <= mv[1] <= 0x7F:
+                k = j + 1
+                ln = 8
+
+            # Apple Compiler symbol
+            elif mv[0] == 0x80 and mv[1] != 0:
+                k = j + 2
+                ln = mv[1]
+
+            # Apple Compiler symbol
+            elif 0x81 <= mv[0] <= 0x9F:
+                k = j + 1
+                ln = mv[0] & 0x7F
+
+            # No MacsBug string
+            else:
+                continue
+
+            s = bytes(bigmv[k : k + ln])
+            # Sanitise the string
+            if is_mxbg_str(s):
+                yield i, k, s.decode("ascii")
+
+        except IndexError:
+            pass
+
+
+def is_mxbg_str(s):
+    for c in s:
+        if not ((ord("a") <= c <= ord("z")) or (ord("A") <= c <= ord("Z")) or (ord("0") <= c <= ord("9")) or c in (ord(" "), ord("%"), ord("_"))):
+            return False
+    return True
+
+
 with open(args.dest + ".py", "w") as idascript:
     # Find MacsBug symbols
     namedict = {}
     for r in other_resources:
         targets = set(ofs for _, seg, ofs in jump_table if seg == r.id)
 
-        bugnames = []
-        lastfound = 0
-        for i in range(0, len(r) - 2, 2):
-            namelen = r[i + 2]
-            if r[i : i + 2] not in (b"\x4e\x75", b"\x4e\xd0"):
-                continue
-            if not (0x81 <= namelen < 0xB0):
-                continue
-            namelen &= 0x3F
-            if i + 3 + namelen > len(r):
-                continue
-            name = r[i + 3 : i + 3 + namelen].decode("latin-1")
-            if not all(c in OKCHARS for c in name):
-                continue
+        for rtsoffset, stringoffset, name in macsbug_syms(r):
+            print(f"idaapi.make_ascii_string({addr(r.id)+stringoffset:#X}, {(len(name)+2)&~1}, ASCSTR_C)", file=idascript)
+            print(f"set_cmt({addr(r.id)+stringoffset:#X}, 'MacsBug symbol', 0)", file=idascript)
 
-            print(f"idaapi.make_ascii_string(0x{addr(r.id)+i+2:X}, {(namelen+2)&~1}, ASCSTR_PASCAL)", file=idascript)
-            print(f"set_cmt(0x{addr(r.id)+i+2:X}, 'MacsBug symbol', 0)", file=idascript)
+            for funcoffset in reversed(range(0, rtsoffset, 2)):
+                inst = bytes(r[funcoffset : funcoffset + 2])
+                if inst in (b"\x4E\x75", b"\x4E\x74", b"\x4E\xD0"):
+                    break  # encountered a func-end
 
-            possibles = []
-            for j in reversed(range(lastfound, i, 2)):
-                if r[j : j + 2] == b"Nu":
-                    break  # stop looking after an RTS
-                if r[j : j + 2] == b"NV" or j in targets:
-                    possibles.append(j)
-
-            lastfound = i
-
-            if len(possibles) > 3:
-                continue  # don't bother with this name, too ambiguous
-
-            for j, p in enumerate(possibles, 1):
-                namedict[addr(r.id) + p] = name if len(possibles) == 1 else f"{name}?{j}"
+                if funcoffset in targets or inst == b"NV":
+                    namedict[addr(r.id) + funcoffset] = name
+                    break
 
     interseg_calls = {}
     for r in other_resources:
