@@ -42,7 +42,7 @@ for r in other_resources:
 with open(args.dest, "wb") as f:
     f.write(bigboy)
 
-jump_table = []  # (a5_ofs, segnum, seg_ofs)
+jump_table = {}  # a5_ofs: (segnum, seg_ofs)
 (jt_size, a5_offset_of_jt) = struct.unpack_from(">LL", jt_resource, 8)
 
 thirtytwo = False
@@ -58,11 +58,7 @@ for jt_ofs in range(16, 16 + jt_size, 8):
         if be_a9f0 != 0xA9F0:
             raise ValueError("32-bit jt")
 
-        rbyid = {r.id: r for r in resources}[segnum]
-        (adjust,) = struct.unpack_from(">L", r, 0x20)
-        # ofs += adjust
-
-        jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs))
+        jump_table[jt_ofs - 16 + a5_offset_of_jt + 2] = (segnum, ofs)
 
     else:
         ofs, be_3f3c, segnum, be_a9f0 = struct.unpack_from(">HHHH", jt_resource, jt_ofs)
@@ -70,7 +66,7 @@ for jt_ofs in range(16, 16 + jt_size, 8):
         if be_3f3c != 0x3F3C or be_a9f0 != 0xA9F0:
             raise ValueError("16-bit jt")
 
-        jump_table.append((jt_ofs - 16 + a5_offset_of_jt + 2, segnum, ofs + 4))
+        jump_table[jt_ofs - 16 + a5_offset_of_jt + 2] = (segnum, ofs)
 
 
 # From https://github.com/elliotnunn/mps/blob/master/stacktrace.go
@@ -133,7 +129,7 @@ with open(args.dest + ".py", "w") as idascript:
     # Find MacsBug symbols
     namedict = {}
     for r in other_resources:
-        targets = set(ofs for _, seg, ofs in jump_table if seg == r.id)
+        targets = set(ofs for seg, ofs in jump_table.values() if seg == r.id)
 
         for rtsoffset, stringoffset, name in macsbug_syms(r):
             print(f"idaapi.make_ascii_string({addr(r.id)+stringoffset:#X}, {(len(name)+2)&~1}, ASCSTR_C)", file=idascript)
@@ -164,7 +160,7 @@ with open(args.dest + ".py", "w") as idascript:
         else:
             segnames[r.id] = f"seg_{r.id:X}"
 
-    for a5_ofs, segnum, ofs in jump_table:
+    for a5_ofs, (segnum, ofs) in jump_table.items():
         bigboy_ofs = addr(segnum) + ofs
 
         cool_name = f"{segnames[segnum]}$"
